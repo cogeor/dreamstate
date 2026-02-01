@@ -1,4 +1,5 @@
 ---
+name: ds:ping
 description: Test connection to dreamstate daemon
 allowed-tools:
   - Read

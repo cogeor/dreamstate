@@ -1,4 +1,5 @@
 ---
+name: ds:status
 description: Show dreamstate daemon and idle mode status
 allowed-tools:
   - Read

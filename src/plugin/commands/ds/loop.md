@@ -1,4 +1,5 @@
 ---
+name: ds:loop
 description: Start a plan/implement/test loop from a plan draft
 allowed-tools:
   - Read

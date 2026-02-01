@@ -1,4 +1,5 @@
 ---
+name: ds:idle
 description: Enter idle mode - continuously refine loop plans until /ds:wake
 allowed-tools:
   - Read

@@ -107,6 +107,8 @@ Result: {X passed, Y failed}
 
 **Final Status**: {PASS|FAIL}
 **Ready for Commit**: {yes|no}
+
+If ready: Coordinator will commit changes (user gets full credit, no AI attribution)
 ```
 
 ## Testing Guidelines

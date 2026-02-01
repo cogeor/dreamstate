@@ -1,4 +1,5 @@
 ---
+name: ds:wake
 description: Stop idle mode and return control to human
 allowed-tools:
   - Read
