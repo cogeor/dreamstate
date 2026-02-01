@@ -35,6 +35,11 @@ PID:        {pid}
 Uptime:     {formatted uptime}
 Tasks:      {tasksProcessed} processed
 
+Token Budget:
+  Used:     {used}/{limit} tokens this hour
+  Status:   {Active|Paused}
+  Resets:   {minutes until reset}
+
 Idle Mode:  {Active|Inactive}
 Model:      {model if active}
 Iterations: {count if active}
@@ -56,5 +61,13 @@ Dreamstate Status
 Daemon: Not running
 
 Start with: npm run daemon
+```
+
+When token budget paused:
+```
+Token Budget: PAUSED
+  Used: {used}/{limit} tokens
+  Operations paused until budget resets
+  Manual resume: Update config or wait for hourly reset
 ```
 </output-format>

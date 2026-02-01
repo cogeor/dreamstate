@@ -5,6 +5,12 @@ export interface DaemonStatus {
   uptime: number;
   watching: string[];
   tasksProcessed: number;
+  tokenBudget?: {
+    used: number;
+    limit: number;
+    remaining: number;
+    isPaused: boolean;
+  };
 }
 
 export interface Task {
@@ -39,6 +45,11 @@ export interface Config {
     model: string;
   };
   watch: {
+    patterns: string[];
+    ignore: string[];
+  };
+  docs: {
+    enabled: boolean;
     patterns: string[];
     ignore: string[];
   };
@@ -110,4 +121,19 @@ export interface TestResult {
   readyForCommit: boolean;
   summary: string;
   failures?: string[];
+}
+
+export interface TokenUsage {
+  timestamp: string;
+  operation: string;
+  tokensUsed: number;
+  model: string;
+}
+
+export interface TokenBudget {
+  hourlyLimit: number;
+  currentHourUsage: number;
+  hourStartedAt: string;
+  history: TokenUsage[];
+  isPaused: boolean;
 }

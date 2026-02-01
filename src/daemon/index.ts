@@ -1,11 +1,15 @@
 import { IPC } from './ipc.js';
 import { FileWatcher } from './file-watcher.js';
+import { TokenBudgetTracker } from './token-budget.js';
+import { IdleDetector } from './idle-detector.js';
 import { loadConfig, ensureDreamstateDir } from '../shared/config.js';
 import type { DaemonStatus, Task, TaskResult, PingResult } from '../shared/types.js';
 
 class Daemon {
   private ipc: IPC;
   private fileWatcher: FileWatcher;
+  private tokenBudget: TokenBudgetTracker;
+  private idleDetector: IdleDetector;
   private workspaceRoot: string;
   private startedAt: Date;
   private tasksProcessed = 0;
@@ -22,9 +26,33 @@ class Daemon {
     this.ipc = new IPC(workspaceRoot);
     const config = loadConfig(workspaceRoot);
 
+    this.tokenBudget = new TokenBudgetTracker(workspaceRoot, config.daemon.token_budget_per_hour);
+
+    this.idleDetector = new IdleDetector(workspaceRoot, {
+      idleTimeoutMinutes: config.daemon.idle_timeout_minutes,
+      model: config.daemon.model,
+      onIdleStart: () => this.handleIdleStart(),
+      onIdleEnd: () => this.handleIdleEnd(),
+    });
+
     this.fileWatcher = new FileWatcher(workspaceRoot, config, {
       onFileChange: (task) => this.queueTask(task)
     });
+  }
+
+  private handleIdleStart(): void {
+    // Check token budget before auto-starting idle tasks
+    if (this.tokenBudget.isOverBudget()) {
+      console.log('[Daemon] Idle detected but token budget exceeded, skipping auto-idle');
+      return;
+    }
+    console.log('[Daemon] Auto-idle triggered - would start idle planning tasks');
+    // Note: Full auto-idle implementation would spawn claude here
+    // For now, just log - user can manually trigger /ds:idle
+  }
+
+  private handleIdleEnd(): void {
+    console.log('[Daemon] Activity resumed, idle tasks paused');
   }
 
   private queueTask(task: Task): void {
@@ -61,13 +89,20 @@ class Daemon {
   }
 
   private updateStatus(): void {
+    const budgetStatus = this.tokenBudget.getStatus();
     const status: DaemonStatus = {
       pid: process.pid,
       startedAt: this.startedAt.toISOString(),
       lastActivity: new Date().toISOString(),
       uptime: Date.now() - this.startedAt.getTime(),
       watching: this.fileWatcher.getWatchedPaths(),
-      tasksProcessed: this.tasksProcessed
+      tasksProcessed: this.tasksProcessed,
+      tokenBudget: {
+        used: budgetStatus.used,
+        limit: budgetStatus.limit,
+        remaining: budgetStatus.remaining,
+        isPaused: budgetStatus.isPaused,
+      }
     };
     this.ipc.writeStatus(status);
   }
@@ -75,6 +110,9 @@ class Daemon {
   private pollTasks(): void {
     const tasks = this.ipc.getPendingTasks();
     for (const task of tasks) {
+      // Record activity when processing tasks
+      this.idleDetector.recordActivity();
+
       const result = this.processTask(task);
       this.ipc.writeResult(result);
       this.ipc.consumeTask(task.id);
@@ -92,6 +130,9 @@ class Daemon {
 
     // Start file watcher
     this.fileWatcher.start();
+
+    // Start idle detector
+    this.idleDetector.start();
 
     // Initial status
     this.updateStatus();
@@ -146,6 +187,7 @@ class Daemon {
     }
 
     this.fileWatcher.stop();
+    this.idleDetector.stop();
     this.ipc.clearPid();
 
     console.log('[Daemon] Stopped');
