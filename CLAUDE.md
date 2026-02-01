@@ -8,6 +8,92 @@ Dreamstate is a Claude Code plugin with a background daemon for spec-driven deve
 
 **Core philosophy:** Humans write plan drafts, agents write self-cleaning code.
 
+---
+
+## IMPORTANT: Loop-Based Workflow
+
+**Every implementation task is a loop.** This is mandatory, not optional.
+
+### Before Starting Any Implementation
+
+1. **Create a loop folder**:
+   ```
+   .dreamstate/loops/{YYYYMMDD-HHMMSS}-{slug}/
+   ```
+
+2. **Create DRAFT.md** with the task description
+
+3. **Create STATUS.md**:
+   ```markdown
+   # Loop Status
+   Started: {timestamp}
+   Phase: implementing
+   Updated: {timestamp}
+
+   ## Progress
+   - [ ] Implementation
+   - [ ] Verification
+   - [ ] Commit
+   ```
+
+### During Implementation
+
+- Update STATUS.md as you progress
+- Keep changes focused on one logical unit
+
+### After Implementation Complete
+
+1. **Verify the build passes**: `npm run build`
+
+2. **Create IMPLEMENTATION.md** documenting what was done
+
+3. **Commit immediately** (DO NOT batch multiple loops):
+   ```bash
+   git add <changed-files>
+   # Do NOT add .dreamstate/
+   git commit -m "{type}({scope}): {description}
+
+   Implements: {loop-folder-name}"
+   ```
+
+4. **Update STATUS.md**: Phase → complete
+
+5. **Create COMMIT.md** with commit hash
+
+### Commit Message Format
+
+Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`
+
+```
+feat(daemon): add token budget tracking
+
+- Add TokenBudget type
+- Create tracker class
+- Integrate into daemon
+
+Implements: 20260201-193500-token-budgeting
+```
+
+### What NOT to Do
+
+- ❌ Implement multiple features without committing between them
+- ❌ Skip creating the loop folder
+- ❌ Commit .dreamstate/ artifacts with code changes
+- ❌ Forget to run `npm run build` before committing
+
+### Quick Reference
+
+```
+1. mkdir .dreamstate/loops/{timestamp}-{slug}
+2. Create DRAFT.md, STATUS.md
+3. Implement
+4. npm run build
+5. git add <src-files> && git commit
+6. Create COMMIT.md
+```
+
+---
+
 ## Commands
 
 ```bash
