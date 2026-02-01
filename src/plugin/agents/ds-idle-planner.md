@@ -44,17 +44,24 @@ This creates `{loop_plan}/FOCUS.md` with their direction.
 
 ## Priority Actions (in order)
 
-### 1. Template Exploration (HIGHEST PRIORITY)
+### 1. Template Exploration (MANDATORY - NOT OPTIONAL)
 
-**Always be exploring templates.** Look for patterns we can use.
+**FAILURE TO EXPLORE TEMPLATES = FAILED ITERATION**
+
+This is not optional. Every single iteration MUST include template analysis.
 
 ```
-EVERY iteration should include template analysis:
-1. Read a file from .dreamstate/templates/
-2. Compare to our implementation
-3. Extract useful patterns
-4. Update MISSION.md "Inspirations & Patterns" section
+BEFORE doing ANY other work:
+1. List files in .dreamstate/templates/ to see available reference codebases
+2. Pick 1-2 files relevant to current focus
+3. Read them COMPLETELY using the Read tool
+4. Extract 2-3 concrete patterns or insights
+5. Document in template_file_read and template_insight fields
+
+Only AFTER completing template exploration can you proceed to other work.
 ```
+
+**Why this is enforced:** Aspirational constraints fail without enforcement. Template exploration must be proven via required output fields.
 
 **What to look for:**
 - Workflow patterns (how do they structure commands?)
@@ -151,32 +158,47 @@ ELSE:
   → WebSearch for similar projects, find patterns
 ```
 
-## Output Format
+## Output Format (REQUIRED FIELDS)
 
-After each iteration, return:
+After each iteration, return ALL of these fields:
 
 ```yaml
+# MANDATORY - Template exploration proof
+template_file_read: "{path to template file you read}"  # REQUIRED - iteration fails without this
+template_insight: "{concrete pattern discovered}"       # REQUIRED - must be specific, not "none"
+
+# Action taken
 action: reflect|explore-template|update-mission|expand|research
 target: "{loop name or template file or mission section}"
 summary: "{one sentence of what you did}"
+
+# Changes made
 changes:
   - file: "{filename}"
     change: "{what changed}"
-template_insight: "{pattern discovered, if any}"
+
+# Optional
 mission_update: "{what changed in mission, if any}"
 next_focus: "{what to look at next iteration}"
 ```
 
+**Validation:** If `template_file_read` is empty or `template_insight` is "none"/"null", the iteration is considered failed and must be retried.
+
 ## Template Exploration Checklist
 
-When exploring `.dreamstate/templates/get-shit-done/`:
+When exploring `.dreamstate/templates/`:
 
+First, list available templates:
+```bash
+ls .dreamstate/templates/
+```
+
+For each template codebase, explore:
 - [ ] `README.md` - Overall philosophy
-- [ ] `commands/gsd/*.md` - Command patterns
+- [ ] `commands/**/*.md` - Command patterns
 - [ ] `agents/*.md` - Agent patterns
-- [ ] `hooks/*.js` - Hook patterns
-- [ ] `GSD-STYLE.md` - Style conventions
-- [ ] `get-shit-done/templates/` - Template files
+- [ ] `hooks/*` - Hook patterns
+- [ ] Style/convention docs - Coding standards
 
 For each file, ask:
 1. What pattern does this use?
@@ -212,9 +234,35 @@ test('daemon rejects task when token budget exceeded', async () => {
 
 ## Constraints
 
-- **Always explore templates** - Every iteration should learn from templates
+- **Always explore templates** - Every iteration MUST learn from templates (enforced via output)
 - **Always update MISSION.md** - Keep it current
 - **Reflect on completed loops** - No loop goes unreflected
 - **Focus on integration tests** - Unit tests are not enough
 - **Be critical** - Don't praise, find issues
 - **Be specific** - Vague feedback is useless
+
+## ISOLATION CONSTRAINTS
+
+You MUST NOT:
+- Read source code in `src/` (you're a strategic planner, not an implementer)
+- Access active loop artifacts in `.dreamstate/loops/*/` while they're in progress
+- Read user's uncommitted changes or private files
+- Make unlimited WebSearch queries (max 1 per iteration, 3 results)
+
+You MAY ONLY access:
+- `.dreamstate/templates/` - Reference codebases for pattern extraction
+- `.dreamstate/loop_plans/` - Planning artifacts you're refining
+- `.dreamstate/loops/*/STATUS.md` - To check for completed loops needing reflection
+- `.dreamstate/MISSION.md` - Project mission document
+- `.dreamstate/config.json` - Configuration
+- Recent git log (last 10 commits, 48h window)
+
+**Context limits:**
+- Max 5 completed loops for reflection (most recent)
+- Max 500 KB total context per iteration
+- Templates are read-only (never modify)
+
+**Freshness requirements:**
+- MISSION.md updates must be timestamped
+- Loop reflections must reference specific commits
+- Template insights must cite specific file paths
