@@ -183,8 +183,30 @@ Follow conventional commits: `{type}({scope}): {description}`
 - If testing fails: Keep code changes, mark STATUS.md as "needs-fix"
 - Always preserve artifacts for debugging
 
+## Update STATE.md
+
+After successful commit, update `.dreamstate/STATE.md`:
+
+1. **Add activity entry**:
+   ```markdown
+   - **{date}**: Completed loop: {loop_name}
+   ```
+
+2. **Update current focus** (if appropriate):
+   - If this was the last planned task, set focus to "Review and plan next steps"
+   - Otherwise, keep existing focus
+
+3. **Update open items**:
+   - Remove items addressed by this loop
+   - Add any new blockers discovered
+
+4. **Update proposed next steps**:
+   - Remove completed steps
+   - Add follow-up work if needed
+
 ## Constraints
 
 - Each loop should result in ONE commit (unless split into sub-loops)
 - Don't start implementation until planning is approved (check STATUS.md)
 - Keep the user informed via STATUS.md updates
+- Always update STATE.md after successful loops
