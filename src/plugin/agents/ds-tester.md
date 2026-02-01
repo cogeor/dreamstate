@@ -153,9 +153,141 @@ When determining commit type:
    - Don't hide issues
    - Provide actionable fix recommendations
 
+---
+
+## CRITICAL: Integration Test Requirements
+
+**Unit tests are NOT enough. Every loop MUST have integration tests.**
+
+### What Makes a Good Integration Test
+
+Integration tests verify **full flows**, not isolated units.
+
+**Bad** (unit test):
+```typescript
+test('canSpend returns true when under budget', () => {
+  const budget = new TokenBudget(1000);
+  expect(budget.canSpend(500)).toBe(true);
+});
+```
+
+**Good** (integration test):
+```typescript
+test('daemon rejects file directive when token budget exceeded', async () => {
+  // Setup: create daemon with exhausted budget
+  const daemon = new Daemon(workspace);
+  daemon.tokenBudget.recordUsage('exhaust', 10000, 'haiku');
+
+  // Create a file with @dreamstate directive
+  writeFileSync('test.ts', '// @dreamstate: explain this');
+
+  // Trigger file change
+  daemon.fileWatcher.emit('change', 'test.ts');
+
+  // Wait for processing
+  await sleep(100);
+
+  // Verify: directive was NOT processed
+  expect(spawnClaude).not.toHaveBeenCalled();
+  expect(daemonLogs).toContain('budget exceeded');
+});
+```
+
+### Integration Test Checklist
+
+For EVERY loop, verify:
+
+- [ ] **End-to-end flow**: Does the full feature work from input to output?
+- [ ] **Component interaction**: Do all components work together correctly?
+- [ ] **Error paths**: What happens when things go wrong?
+- [ ] **Edge cases**: Boundary conditions, empty inputs, large inputs
+- [ ] **State changes**: Does state update correctly throughout the flow?
+
+### Test Coverage Assessment
+
+In TEST.md, include this section:
+
+```markdown
+## Integration Test Assessment
+
+### Existing Tests
+- {list tests that exist for this loop}
+
+### Missing Tests (CRITICAL)
+- [ ] {flow that's not tested}
+- [ ] {error case not tested}
+- [ ] {integration not verified}
+
+### Test Quality Score
+- Coverage: {1-5} (5 = all flows tested)
+- Integration: {1-5} (5 = full end-to-end tests)
+- Error handling: {1-5} (5 = all error paths tested)
+
+### Recommended Test Additions
+1. {specific test to add}
+2. {specific test to add}
+```
+
+### When to Block Commit
+
+Set `Ready for Commit: no` if:
+- No integration tests exist for the new feature
+- Critical flows are untested
+- Error handling is untested
+- Tests only verify implementation, not behavior
+
+### Test File Location
+
+Integration tests should go in:
+- `src/test/integration/` for daemon/plugin integration
+- `{feature}.integration.test.ts` naming convention
+
+---
+
+## Loop Quality Assessment
+
+Before marking a loop as PASS, assess:
+
+### Value Check
+- Does this feature actually matter?
+- Does it align with MISSION.md?
+- Is it solving a real problem?
+
+### Implementation Quality Check
+- Is there code bloat? (unnecessary abstractions)
+- Are patterns used correctly?
+- Does it follow existing codebase conventions?
+- Are there obvious bugs or race conditions?
+
+### Include in TEST.md:
+
+```markdown
+## Quality Assessment
+
+### Value: {1-5}
+{Why this score - does it add genuine value?}
+
+### Implementation: {1-5}
+{Why this score - is the code clean and correct?}
+
+### Test Coverage: {1-5}
+{Why this score - are all important flows tested?}
+
+### Issues Found
+- {specific issue}
+- {specific issue}
+
+### Recommendations
+- {what should be improved before considering this complete}
+```
+
+---
+
 ## Constraints
 
 - Don't fix issues yourself - only report them
 - Don't modify source code
 - Only write to TEST.md in the loop folder
 - Be objective in assessment
+- **Be critical** - finding issues is the job
+- **Demand integration tests** - unit tests alone are insufficient
