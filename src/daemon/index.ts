@@ -3,7 +3,8 @@ import { FileWatcher } from './file-watcher.js';
 import { TokenBudgetTracker } from './token-budget.js';
 import { IdleDetector } from './idle-detector.js';
 import { loadConfig, ensureDreamstateDir } from '../shared/config.js';
-import type { DaemonStatus, Task, TaskResult, PingResult } from '../shared/types.js';
+import type { DaemonStatus, Task, TaskResult, PingResult, FileTask } from '../shared/types.js';
+import { runClaude } from './claude-cli.js';
 
 class Daemon {
   private ipc: IPC;
@@ -36,8 +37,52 @@ class Daemon {
     });
 
     this.fileWatcher = new FileWatcher(workspaceRoot, config, {
-      onFileChange: (task) => this.queueTask(task)
+      onFileChange: (task) => this.queueTask(task),
+      onFileDirective: (task) => this.processFileDirective(task)
     });
+  }
+
+  private async processFileDirective(task: FileTask): Promise<void> {
+    console.log(`[Daemon] Processing directive: ${task.instruction}`);
+
+    // Check token budget
+    const estimatedTokens = this.tokenBudget.estimateTokens('haiku', 'medium');
+    if (!this.tokenBudget.canSpend(estimatedTokens)) {
+      console.log('[Daemon] Token budget exceeded, skipping directive');
+      return;
+    }
+
+    // Record activity
+    this.idleDetector.recordActivity();
+
+    // Build prompt with file context
+    const prompt = `File: ${task.filePath}
+Line ${task.lineNumber}: ${task.directive}
+
+Instruction: ${task.instruction}
+
+Please complete this task. Be concise and focused on the specific instruction.`;
+
+    try {
+      const result = await runClaude(prompt, {
+        model: 'haiku',
+        workingDir: this.workspaceRoot,
+      });
+
+      if (result.success) {
+        console.log(`[Daemon] Directive completed: ${task.instruction.slice(0, 50)}...`);
+        // Record token usage
+        this.tokenBudget.recordUsage(
+          `directive: ${task.instruction.slice(0, 30)}`,
+          result.tokensUsed || estimatedTokens,
+          'haiku'
+        );
+      } else {
+        console.error(`[Daemon] Directive failed: ${result.error}`);
+      }
+    } catch (err) {
+      console.error(`[Daemon] Error processing directive:`, err);
+    }
   }
 
   private handleIdleStart(): void {

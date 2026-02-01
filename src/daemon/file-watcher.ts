@@ -1,9 +1,17 @@
 import chokidar from 'chokidar';
+import { readFileSync } from 'fs';
 import { join } from 'path';
-import type { Config, Task } from '../shared/types.js';
+import type { Config, Task, FileTask } from '../shared/types.js';
+
+// Regex to match @dreamstate directives
+// Supports: // @dreamstate: instruction
+//           # @dreamstate: instruction
+//           /* @dreamstate: instruction */
+const DIRECTIVE_REGEX = /@dreamstate:\s*(.+?)(?:\s*\*\/)?$/;
 
 export interface FileWatcherEvents {
   onFileChange: (task: Task) => void;
+  onFileDirective?: (task: FileTask) => void;
 }
 
 export class FileWatcher {
@@ -37,6 +45,15 @@ export class FileWatcher {
     });
 
     this.watcher.on('change', (filePath: string) => {
+      // Check for @dreamstate directives
+      const directives = this.scanForDirectives(filePath);
+      if (directives.length > 0 && this.events.onFileDirective) {
+        for (const directive of directives) {
+          this.events.onFileDirective(directive);
+        }
+      }
+
+      // Also emit general file change
       const task: Task = {
         id: `file-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         type: 'file-change',
@@ -64,5 +81,43 @@ export class FileWatcher {
 
   getWatchedPaths(): string[] {
     return this.config.watch.patterns;
+  }
+
+  /**
+   * Scan a file for @dreamstate directives
+   */
+  private scanForDirectives(filePath: string): FileTask[] {
+    const directives: FileTask[] = [];
+
+    try {
+      const content = readFileSync(filePath, 'utf-8');
+      const lines = content.split('\n');
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const match = line.match(DIRECTIVE_REGEX);
+
+        if (match) {
+          const instruction = match[1].trim();
+          directives.push({
+            id: `directive-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            type: 'file-directive',
+            filePath,
+            directive: line.trim(),
+            instruction,
+            lineNumber: i + 1,
+            createdAt: new Date().toISOString(),
+          });
+        }
+      }
+    } catch (err) {
+      console.error(`[FileWatcher] Error scanning ${filePath}:`, err);
+    }
+
+    if (directives.length > 0) {
+      console.log(`[FileWatcher] Found ${directives.length} directive(s) in ${filePath}`);
+    }
+
+    return directives;
   }
 }

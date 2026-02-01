@@ -137,3 +137,22 @@ export interface TokenBudget {
   history: TokenUsage[];
   isPaused: boolean;
 }
+
+export interface FileTask {
+  id: string;
+  type: 'file-directive';
+  filePath: string;
+  directive: string;
+  instruction: string;
+  lineNumber: number;
+  createdAt: string;
+}
+
+export interface FileTaskResult {
+  taskId: string;
+  success: boolean;
+  output?: string;
+  error?: string;
+  tokensUsed: number;
+  completedAt: string;
+}
