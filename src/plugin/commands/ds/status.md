@@ -23,6 +23,12 @@ Display the current status of the dreamstate daemon and idle mode.
 2. Read `.dreamstate/idle.state` and parse as JSON
    - Check if `active` is true
    - Show iteration count and current loop plan
+
+3. Count loop reflections:
+   - Glob for `.dreamstate/loops/*/STATUS.md`
+   - For each, check if phase is "complete"
+   - Check if REFLECTION.md exists and Status is not "PENDING"
+   - Calculate: reflected / total completed
 </execution>
 
 <output-format>
@@ -45,6 +51,11 @@ Model:      {model if active}
 Focus:      {prompt if provided, else "General exploration"}
 Iterations: {count if active}
 Loop Plan:  {path if active}
+
+Loops:
+  Completed:  {total_complete}
+  Reflected:  {reflected}/{total_complete}
+  Pending:    /ds:verify-loop to complete reflections
 
 Watching:   {patterns}
 

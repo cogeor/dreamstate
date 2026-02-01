@@ -30,6 +30,7 @@ npm run install:claude  # Install plugin to Claude Code
 | `/ds:idle [model]` | Enter idle mode (haiku/sonnet/opus) |
 | `/ds:wake` | Stop idle mode |
 | `/ds:loop [path]` | Start plan/implement/test loop |
+| `/ds:verify-loop [id]` | Complete loop reflection |
 
 **Agents:**
 | Name | Role |

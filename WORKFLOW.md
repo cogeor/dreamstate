@@ -89,3 +89,31 @@ Loops make intent explicit, progress visible, and rollback safe. Each loop is ti
 | `STATUS.md` | Progress tracking | Before starting |
 | `IMPLEMENTATION.md` | What was done | After implementation |
 | `COMMIT.md` | Commit reference | After committing |
+| `REFLECTION.md` | Value/quality assessment | After commit (stub), via `/ds:verify-loop` |
+
+## Loop Reflection
+
+After a loop completes, a REFLECTION.md stub is auto-generated. Complete it with `/ds:verify-loop`:
+
+```bash
+/ds:verify-loop                    # Oldest pending reflection
+/ds:verify-loop 20260202-feature   # Specific loop
+```
+
+Reflection assesses three dimensions (1-5 scale):
+
+| Dimension | Question |
+|-----------|----------|
+| **Value** | Did this add meaningful value? |
+| **Quality** | Is the implementation clean and maintainable? |
+| **Coverage** | Are critical paths tested? |
+
+Check reflection status with `/ds:status`:
+```
+Loops:
+  Completed:  14
+  Reflected:  3/14
+  Pending:    /ds:verify-loop to complete reflections
+```
+
+Reflections catch silent failures and improve future loops.

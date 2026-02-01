@@ -34,7 +34,8 @@ You receive a loop folder path containing DRAFT.md (the user's plan draft). Your
 ├── PLAN.md           # Planning phase output
 ├── IMPLEMENTATION.md # Implementation phase output
 ├── TEST.md           # Testing phase output
-└── COMMIT.md         # Commit info (on success)
+├── COMMIT.md         # Commit info (on success)
+└── REFLECTION.md     # Post-loop reflection (auto-stub, completed via /ds:verify-loop)
 ```
 
 ## Execution Flow
@@ -175,6 +176,29 @@ Follow conventional commits: `{type}({scope}): {description}`
 - Do NOT push - user pushes manually
 - User gets full credit for the commit
 - If commit fails, update STATUS.md to `needs-fix` and explain in COMMIT.md
+
+### Post-Commit: Create Reflection Stub
+
+After successful commit, create a REFLECTION.md stub to prompt future reflection:
+
+```markdown
+# Loop Reflection: {loop_name}
+
+Status: PENDING
+Completed: {timestamp}
+Commit: {commit_hash}
+
+---
+
+**Run `/ds:verify-loop {loop_name}` to complete this reflection.**
+
+This stub was auto-generated. The reflection process will:
+1. Assess value, quality, and coverage (1-5 scale)
+2. Identify what went well and what could improve
+3. Create actionable recommendations
+```
+
+This stub ensures loops are trackable and prompts retrospective analysis.
 
 ## Error Handling
 
