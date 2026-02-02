@@ -2,7 +2,9 @@
 /**
  * LLM-based documentation validator for pre-commit hooks.
  *
- * Uses Claude to validate that documentation claims match the actual codebase.
+ * Uses Claude with tools (Glob, Read) to validate that documentation
+ * claims match the actual codebase.
+ *
  * Exit codes:
  *   0 - All checks pass
  *   1 - Validation failed (discrepancies found)
@@ -10,25 +12,12 @@
  */
 
 import { execSync, spawnSync } from 'child_process';
-import { readFileSync, writeFileSync, unlinkSync, existsSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'fs';
 
 const DOC_FILES = ['CLAUDE.md', 'ARCHITECTURE.md', 'WORKFLOW.md'];
-const AGENTS_DIR = 'src/plugin/agents';
-const CONFIG_FILE = '.dreamstate/config.json';
-
-interface ValidationContext {
-  stagedFiles: string[];
-  docFiles: string[];
-  sourceFiles: string[];
-  docsContent: Map<string, string>;
-  agentFiles: string[];
-  configSchema: string | null;
-}
 
 function getStagedFiles(): string[] {
   try {
-    // Use --diff-filter=d to exclude deleted files (fixes false positives on renames)
     const output = execSync('git diff --cached --name-only --diff-filter=d', { encoding: 'utf-8' });
     return output.trim().split('\n').filter(f => f.length > 0);
   } catch {
@@ -44,112 +33,99 @@ function readFileOrNull(path: string): string | null {
   }
 }
 
-function getAgentFiles(): string[] {
-  try {
-    const output = execSync(`git ls-files "${AGENTS_DIR}/*.md"`, { encoding: 'utf-8' });
-    return output.trim().split('\n').filter(f => f.length > 0);
-  } catch {
-    return [];
-  }
-}
+function buildValidationPrompt(docsContent: Map<string, string>, stagedFiles: string[]): string {
+  let prompt = `You are a documentation validator with access to tools. Your task is to verify that documentation claims match the actual codebase.
 
-function buildContext(): ValidationContext {
-  const stagedFiles = getStagedFiles();
-  const docFiles = stagedFiles.filter(f => DOC_FILES.includes(f));
-  const sourceFiles = stagedFiles.filter(f =>
-    f.startsWith('src/') && (f.endsWith('.ts') || f.endsWith('.tsx'))
-  );
+## IMPORTANT: Use Tools to Verify
 
-  const docsContent = new Map<string, string>();
-  for (const docFile of DOC_FILES) {
-    const content = readFileOrNull(docFile);
-    if (content) {
-      docsContent.set(docFile, content);
-    }
+You MUST use tools to verify claims. Do NOT guess or assume - actually check:
+- Use **Glob** to verify directories/files exist (e.g., \`src/plugin/references/*.md\`)
+- Use **Read** to verify file contents match descriptions
+- Use **Bash** with \`ls\` for directory listings if needed
+
+## Staged Files (being committed)
+${stagedFiles.join('\n') || '(none)'}
+
+## Documentation to Validate
+
+`;
+
+  for (const [file, content] of docsContent) {
+    prompt += `\n### ${file}\n\`\`\`\n${content}\n\`\`\`\n`;
   }
 
-  const agentFiles = getAgentFiles();
-  const configSchema = readFileOrNull(CONFIG_FILE);
+  prompt += `
+## Validation Rules
 
-  return {
-    stagedFiles,
-    docFiles,
-    sourceFiles,
-    docsContent,
-    agentFiles,
-    configSchema
-  };
-}
+1. **File paths**: Use Glob to verify paths mentioned in docs exist
+2. **Directory structures**: Verify directories mentioned exist (don't fail for unlisted subdirectories)
+3. **Agent names**: Verify agents listed have corresponding .md files in src/plugin/agents/
+4. **Config options**: Read .dreamstate/config.json to verify documented options exist
+5. **Hook descriptions**: Read bin/*.ts files to verify hook descriptions are accurate
 
-function buildValidationPrompt(ctx: ValidationContext): string {
-  const parts: string[] = [];
+## What NOT to Flag
 
-  parts.push(`You are a documentation validator. Check if the documentation accurately reflects the codebase.
+- Standard npm commands like "npm install" - these are built-in, not custom scripts
+- Missing subdirectories in structure diagrams - docs don't need to list every folder
+- Minor formatting differences
 
-TASK: Validate documentation claims against actual files.
+## Process
 
-STAGED FILES:
-${ctx.stagedFiles.join('\n') || '(none)'}
+1. Identify all verifiable claims in the documentation
+2. Use Glob/Read/Bash to check each claim
+3. Report any discrepancies found
 
-EXISTING AGENT FILES:
-${ctx.agentFiles.join('\n') || '(none)'}
+## Output Format
 
-CONFIG FILE (${CONFIG_FILE}):
-${ctx.configSchema || '(not found)'}
+After verification, output EXACTLY one of:
 
-DOCUMENTATION TO VALIDATE:
-`);
-
-  for (const [file, content] of ctx.docsContent) {
-    parts.push(`\n--- ${file} ---\n${content}\n`);
-  }
-
-  parts.push(`
-VALIDATION RULES:
-1. Agent names in tables must have corresponding .md files in ${AGENTS_DIR}/
-2. Config options documented must exist in the config schema
-3. File paths mentioned must be valid
-4. Component names must match actual implementations
-
-OUTPUT FORMAT (exactly):
 If all checks pass:
+\`\`\`
 RESULT: PASS
+\`\`\`
 
 If any check fails:
+\`\`\`
 RESULT: FAIL
 - [file:line] Description of discrepancy
+\`\`\`
 
-Be strict. Only output PASS if everything matches.
-`);
+Be thorough. Use tools to verify. Do not guess.`;
 
-  return parts.join('');
+  return prompt;
 }
 
 function runClaudeValidation(prompt: string): { pass: boolean; output: string } {
   try {
-    // Use claude CLI with --print for single response
+    // Run claude with tools enabled via --tools flag
     // Pass prompt via stdin to avoid command line length limits
     const result = spawnSync('claude', [
-      '-p',
-      '--model', 'haiku'
+      '--print',
+      '--model', 'haiku',
+      '--tools', 'Glob,Read,Bash'
     ], {
       input: prompt,
       encoding: 'utf-8',
-      timeout: 120000, // 120 second timeout
-      maxBuffer: 1024 * 1024,
-      shell: true // Required for Windows and to find claude in PATH
+      timeout: 180000, // 3 minute timeout (tools take longer)
+      maxBuffer: 2 * 1024 * 1024,
+      shell: true,
+      cwd: process.cwd()
     });
 
     if (result.error) {
       return { pass: false, output: `Error running claude: ${result.error.message}` };
     }
 
-    if (result.status !== 0 && result.stderr) {
-      return { pass: false, output: `Claude error: ${result.stderr}` };
-    }
-
     const output = result.stdout || '';
+    const stderr = result.stderr || '';
+
+    // Check for RESULT: PASS in output
     const pass = output.includes('RESULT: PASS');
+
+    // If there's an error but no output, report the error
+    if (!output && stderr) {
+      return { pass: false, output: `Claude error: ${stderr}` };
+    }
 
     return { pass, output };
   } catch (err) {
@@ -160,28 +136,41 @@ function runClaudeValidation(prompt: string): { pass: boolean; output: string } 
 function main(): void {
   console.log('[validate-docs] Checking documentation...');
 
-  const ctx = buildContext();
+  const stagedFiles = getStagedFiles();
 
-  // Skip if no doc files exist
-  if (ctx.docsContent.size === 0) {
-    console.log('[validate-docs] No documentation files found, skipping.');
-    process.exit(0);
-  }
-
-  // Skip if no relevant files staged
-  if (ctx.stagedFiles.length === 0) {
+  // Skip if no staged files
+  if (stagedFiles.length === 0) {
     console.log('[validate-docs] No staged files, skipping.');
     process.exit(0);
   }
 
-  // Only validate if docs or source files are staged
-  const hasRelevantChanges = ctx.docFiles.length > 0 || ctx.sourceFiles.length > 0;
-  if (!hasRelevantChanges) {
+  // Check if relevant files are staged
+  const docFiles = stagedFiles.filter(f => DOC_FILES.includes(f));
+  const sourceFiles = stagedFiles.filter(f =>
+    (f.startsWith('src/') || f.startsWith('bin/')) &&
+    (f.endsWith('.ts') || f.endsWith('.tsx') || f.endsWith('.md'))
+  );
+
+  if (docFiles.length === 0 && sourceFiles.length === 0) {
     console.log('[validate-docs] No doc or source changes, skipping.');
     process.exit(0);
   }
 
-  const prompt = buildValidationPrompt(ctx);
+  // Read documentation files
+  const docsContent = new Map<string, string>();
+  for (const docFile of DOC_FILES) {
+    const content = readFileOrNull(docFile);
+    if (content) {
+      docsContent.set(docFile, content);
+    }
+  }
+
+  if (docsContent.size === 0) {
+    console.log('[validate-docs] No documentation files found, skipping.');
+    process.exit(0);
+  }
+
+  const prompt = buildValidationPrompt(docsContent, stagedFiles);
   const { pass, output } = runClaudeValidation(prompt);
 
   if (pass) {
@@ -189,7 +178,13 @@ function main(): void {
     process.exit(0);
   } else {
     console.log('[validate-docs] FAIL - Documentation discrepancies found:');
-    console.log(output);
+    // Extract just the relevant part of output (after tool use)
+    const resultMatch = output.match(/RESULT: FAIL[\s\S]*/);
+    if (resultMatch) {
+      console.log(resultMatch[0]);
+    } else {
+      console.log(output.slice(-2000)); // Last 2000 chars if no clear result
+    }
     console.log('\nUse --no-verify to bypass, or fix the discrepancies.');
     process.exit(1);
   }

@@ -64,6 +64,7 @@ src/
 │   ├── commands/ds/ # Slash commands
 │   ├── agents/      # Agent definitions
 │   └── references/  # Shared reference docs
-├── shared/          # Shared types and config
-└── bin/             # CLI scripts (install, hooks)
+└── shared/          # Shared types and config
+
+bin/                 # CLI scripts (install, hooks)
 ```
