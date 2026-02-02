@@ -12,7 +12,7 @@ Inspired by get-shit-done but with a simplified workflow and reactive file-watch
 For system architecture, see [ARCHITECTURE.md](ARCHITECTURE.md).
 For loop workflow and commit process, see [WORKFLOW.md](WORKFLOW.md).
 
-## Quick Reference
+## Development
 
 **NPM Scripts:**
 ```bash
@@ -22,31 +22,12 @@ npm run daemon       # Start daemon (dev)
 npm run install:claude  # Install plugin to Claude Code
 ```
 
-**Plugin Commands:**
-| Command | Purpose |
-|---------|---------|
-| `/ds:ping` | Test daemon connectivity |
-| `/ds:status` | Show daemon and dream status |
-| `/ds:dream [model]` | Enter dream mode (haiku/sonnet/opus) |
-| `/ds:wake` | Stop dream mode |
-| `/ds:loop [path]` | Start plan/implement/test loop |
-| `/ds:verify-loop [id]` | Complete loop reflection |
-
-**Agents:**
-| Name | Role |
-|------|------|
-| `ds-coordinator` | Orchestrates loops |
-| `ds-planner` | Creates implementation plans |
-| `ds-executor` | Implements tasks |
-| `ds-tester` | Verifies implementation |
-| `ds-dream-planner` | Explores and plans during dream mode |
-| `ds-doc-generator` | Generates documentation during dream mode |
-
 ## Plugin Development
 
-**Commands** (`commands/{namespace}/*.md`):
+**Commands** (`src/plugin/commands/{namespace}/*.md`):
 ```yaml
 ---
+name: ds:command-name
 description: What this command does
 allowed-tools:
   - Read
@@ -56,7 +37,7 @@ allowed-tools:
 Command prompt content
 ```
 
-**Agents** (`agents/*.md`):
+**Agents** (`src/plugin/agents/*.md`):
 ```yaml
 ---
 name: agent-name
@@ -69,51 +50,20 @@ allowed-tools:
 Agent system prompt
 ```
 
-**Hooks** (configure in `settings.json`):
-```json
-{
-  "hooks": {
-    "SessionStart": [
-      { "hooks": [{ "type": "command", "command": "node path/to/hook.js" }] }
-    ]
-  }
-}
+**Hooks** (configured via `bin/install.ts`):
+- `SessionStart`: Auto-starts daemon
+- `UserPromptSubmit`: Triggers auto-dream detection
+- `SessionEnd`: Cleans up daemon on exit
+
+## Project Structure
+
 ```
-
-## Configuration
-
-`.dreamstate/config.json`:
-```json
-{
-  "daemon": {
-    "provider": "claude",
-    "dream_timeout_minutes": 5,
-    "token_budget_per_hour": 10000,
-    "model": "haiku",
-    "auto_dream": {
-      "enabled": false,
-      "model": "haiku",
-      "max_iterations": 10,
-      "prompt": null
-    }
-  },
-  "watch": {
-    "patterns": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
-    "ignore": ["node_modules", "dist", ".git", ".dreamstate"]
-  },
-  "docs": {
-    "enabled": true,
-    "patterns": ["src/**/*.ts", "src/**/*.tsx"],
-    "ignore": ["**/*.test.ts", "**/*.spec.ts", "**/types.ts"]
-  }
-}
+src/
+├── daemon/          # Background daemon (file watcher, IPC, providers)
+├── plugin/          # Claude Code plugin assets
+│   ├── commands/ds/ # Slash commands
+│   ├── agents/      # Agent definitions
+│   └── references/  # Shared reference docs
+├── shared/          # Shared types and config
+└── bin/             # CLI scripts (install, hooks)
 ```
-
-**Config Options:**
-| Section | Option | Description |
-|---------|--------|-------------|
-| `daemon.provider` | LLM provider: `claude`, `opencode`, `codex`, or `auto` |
-| `daemon.auto_dream` | Auto-start dream mode when Claude Code is inactive |
-| `daemon.auto_dream.max_iterations` | Limit iterations per dream session (prevents context bloat) |
-| `docs` | Background documentation generation settings |
-| `docs.patterns` | Files to generate docs for |

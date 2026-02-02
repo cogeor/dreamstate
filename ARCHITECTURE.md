@@ -46,7 +46,7 @@ Dreamstate uses a daemon + plugin architecture for spec-driven development. The 
 |-----------|---------|----------|
 | **Commands** | Slash commands (`/ds:*`) for user interaction | `src/plugin/commands/ds/` |
 | **Agents** | Specialized agents for planning, execution, testing | `src/plugin/agents/` |
-| **Hooks** | Session lifecycle hooks (SessionStart, UserPromptSubmit) | `bin/*.ts` |
+| **Hooks** | Session lifecycle hooks (SessionStart, UserPromptSubmit, SessionEnd) | `bin/*.ts` |
 
 ## IPC Protocol
 
@@ -80,6 +80,7 @@ src/
 bin/
 +-- daemon-hook.ts         # SessionStart hook (auto-starts daemon)
 +-- prompt-hook.ts         # UserPromptSubmit hook (daemon requests)
++-- session-end-hook.ts    # SessionEnd hook (cleanup on exit)
 +-- validate-docs.ts       # Pre-commit doc validation
 +-- install.ts             # Plugin installer
 ```
