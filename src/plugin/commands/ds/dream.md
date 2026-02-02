@@ -16,29 +16,35 @@ Enter dream mode with a specified model. Continuously iterate on exploration, co
 </objective>
 
 <usage>
-/ds:dream [model] [prompt]
+/ds:dream [model] [theme]
 
 Arguments:
-  model  - haiku (default), sonnet, or opus
-  prompt - Optional guidance for the dream planner
+  model - haiku (default), sonnet, or opus
+  theme - Optional overarching theme that guides ALL iterations
+
+The theme is NOT a one-time task. It's a lens through which every iteration views its work.
+Dream mode continues iterating until /ds:wake or max_iterations is reached.
 
 Examples:
   /ds:dream
   /ds:dream haiku
-  /ds:dream sonnet "focus on improving test coverage"
-  /ds:dream "explore patterns in templates/"
-  /ds:dream opus "analyze the daemon architecture"
+  /ds:dream sonnet "test coverage"           # Every iteration focuses on testing
+  /ds:dream "error handling"                  # All iterations examine error handling
+  /ds:dream opus "daemon architecture"        # Deep dive into daemon across all phases
 
-If first argument is not a model name, it's treated as the prompt (uses haiku).
+If first argument is not a model name, it's treated as the theme (uses haiku).
 </usage>
 
 <behavior>
 Dream mode is a CONTINUOUS process that keeps running until /ds:wake is called.
 
-Each iteration selects a dream TYPE and executes that exploration:
+Each iteration selects a dream TYPE and executes that exploration (4-phase cycle):
 - [T] Template - explore .dreamstate/templates/ for patterns
 - [I] Introspect - analyze src/ code for improvements
 - [R] Research - search web for external patterns
+- [V] Verify - run build, run tests, create tests for missing coverage
+
+The [V] Verify phase GROUNDS dreams in reality by actually executing code.
 
 The human can check progress anytime with /ds:status.
 To stop: /ds:wake
@@ -47,16 +53,23 @@ To stop: /ds:wake
 <dream-types>
 ## Dream Type Selection
 
-Each iteration deterministically selects ONE type based on iteration number:
-- Iteration 1, 4, 7, 10... → [T] Template
-- Iteration 2, 5, 8, 11... → [I] Introspect
-- Iteration 3, 6, 9, 12... → [R] Research
+Each iteration deterministically selects ONE type based on iteration number (4-phase cycle):
+- Iteration 1, 5, 9, 13...  → [T] Template
+- Iteration 2, 6, 10, 14... → [I] Introspect
+- Iteration 3, 7, 11, 15... → [R] Research
+- Iteration 4, 8, 12, 16... → [V] Verify
 
-### Type [T] - Template Exploration
+### Type [T] - Template Exploration (with fallback)
 - Read 1-2 files from .dreamstate/templates/
 - Extract patterns applicable to this project
 - Compare to existing implementation
 - Output insight references template file
+
+**Fallback to [I]:** If templates are stale or unhelpful:
+- Template patterns already implemented better in src/
+- Template is empty or irrelevant to current theme
+- No templates exist
+→ Fall back to [I] Introspect for this iteration
 
 ### Type [I] - Code Introspection
 - Read 2-3 source files from src/
@@ -70,19 +83,27 @@ Each iteration deterministically selects ONE type based on iteration number:
 - Search for: best practices, libraries, patterns relevant to focus
 - Extract actionable insights from results
 - Note: WebSearch limited to 1 per iteration
+
+### Type [V] - Verify Execution (GROUNDING)
+- Run `npm run build` to verify code compiles
+- Run `npm test` to see current test status
+- Identify untested modules from previous [I] findings
+- Create test files (*.test.ts only) for missing coverage
+- Output insight includes build/test status (e.g., "build OK, 5/8 tests pass")
+- MUST NOT modify non-test source code
 </dream-types>
 
 <execution>
 1. Parse arguments:
    ```
    IF no arguments:
-     model = "haiku", prompt = null
+     model = "haiku", theme = null
    ELSE IF first arg is "haiku"|"sonnet"|"opus":
      model = first arg
-     prompt = remaining args joined (or null)
+     theme = remaining args joined (or null)
    ELSE:
      model = "haiku"
-     prompt = all args joined
+     theme = all args joined
    ```
 
 2. Check if already in dream mode:
@@ -99,7 +120,7 @@ Each iteration deterministically selects ONE type based on iteration number:
      "active": true,
      "startedAt": "{timestamp}",
      "model": "{model}",
-     "prompt": "{prompt or null}",
+     "theme": "{theme or null}",
      "iterations": 0,
      "currentLoopPlan": "{path}",
      "lastIteration": null,
@@ -111,13 +132,21 @@ Each iteration deterministically selects ONE type based on iteration number:
 
    **Note**: Preserve existing `session_summaries` from previous dream.state if present.
 
-5. If prompt provided, write to {loop_plan}/FOCUS.md:
+5. If theme provided, write to {loop_plan}/THEME.md:
    ```markdown
-   # Dream Session Focus
+   # Dream Session Theme
 
-   > User-provided direction for this dream session.
+   > This theme guides ALL iterations. It is not a one-time task.
+   > Every iteration should view its work through this lens.
 
-   {prompt}
+   **Theme:** {theme}
+
+   ## How to Apply This Theme
+
+   - [T] Template: Look for templates related to "{theme}"
+   - [I] Introspect: Analyze src/ code specifically for "{theme}" concerns
+   - [R] Research: Search for best practices around "{theme}"
+   - [V] Verify: Test and verify "{theme}" aspects work correctly
 
    ---
    Started: {timestamp}
@@ -133,9 +162,9 @@ Each iteration deterministically selects ONE type based on iteration number:
    previous_summaries = dream.state.session_summaries (or [] if none)
 
    WHILE dream.state.active == true:
-     - Determine dream type: (iterations % 3) → 0=[T], 1=[I], 2=[R]
+     - Determine dream type: (iterations % 4) → 0=[T], 1=[I], 2=[R], 3=[V]
      - Read current loop plan
-     - Read FOCUS.md if exists
+     - Read THEME.md if exists (this guides ALL iterations, not just one)
      - Build "Previous Sessions" section from previous_summaries
      - Spawn ds-dream-planner with:
          model={model}
@@ -162,7 +191,7 @@ Each iteration deterministically selects ONE type based on iteration number:
      {
        "sessionId": "{loop_plan_folder_name}",
        "iterations": {count},
-       "summary": "{prompt or 'General exploration'}: {key findings}"
+       "summary": "{theme or 'General exploration'}: {key findings}"
      }
    - Append to dream.state.session_summaries
    - Keep only last 5 session summaries (prevent unbounded growth)
@@ -174,12 +203,13 @@ Each iteration deterministically selects ONE type based on iteration number:
    Dream Mode Active
    ━━━━━━━━━━━━━━━━━
    Model: {model}
-   Focus: {prompt or "General exploration"}
+   Theme: {theme or "General exploration"}
    Loop Plan: {path}
 
-   Types: [T]emplate → [I]ntrospect → [R]esearch (rotating)
+   Types: [T]emplate → [I]ntrospect → [R]esearch → [V]erify (4-phase cycle)
 
-   Dream mode will continuously explore and analyze.
+   The theme guides ALL iterations - it's not a one-time task.
+   Dream mode will continuously iterate until /ds:wake or max_iterations.
    Check progress: /ds:status
    Stop with: /ds:wake
    ```
@@ -191,13 +221,22 @@ When spawning ds-dream-planner, use this prompt structure:
 ```markdown
 # Dream Mode Iteration {N} of {max_iterations}
 
+## Session Theme (APPLIES TO ALL ITERATIONS)
+{If THEME.md exists:}
+**Theme: {theme}**
+This theme guides your exploration. View all work through this lens.
+Do NOT treat this as a one-time task - it's an overarching direction.
+
+{If no theme: "General exploration - no specific theme."}
+
 ## Dream Type: {type}
 This iteration is type **{type}**:
-- [T] = Explore .dreamstate/templates/ for patterns
-- [I] = Analyze src/ code for improvements
-- [R] = Search web for external patterns
+- [T] = Explore .dreamstate/templates/ for patterns related to theme
+- [I] = Analyze src/ code for improvements related to theme
+- [R] = Search web for patterns related to theme
+- [V] = Run build, run tests, verify theme-related functionality
 
-Execute ONLY this type's workflow.
+Execute ONLY this type's workflow, but always through the theme lens.
 
 ## Previous Sessions (Context Preservation)
 {For each session in session_summaries:}
@@ -211,27 +250,39 @@ Before any work, understand what exists:
 2. Read .dreamstate/loops/*/STATUS.md for completed work
 3. Note what's been done to avoid duplicates
 
-## Step 2: Execute Dream Type
+## Step 2: Execute Dream Type (Through Theme Lens)
 
 ### If [T] Template:
-1. Pick 1-2 files from .dreamstate/templates/
-2. Read them, extract patterns applicable to this project
-3. Insight should reference the template file path
+1. Check if .dreamstate/templates/ exists and has useful content
+2. Pick 1-2 files relevant to the session theme
+3. Compare template patterns to current src/ implementation
+4. **EVALUATE:** Is this template useful?
+   - Already implemented better in src/? → STALE
+   - Empty or irrelevant to theme? → UNHELPFUL
+   - No templates exist? → MISSING
+5. **If STALE/UNHELPFUL/MISSING:** Fall back to [I] Introspect instead
+   - Log: "| N | time | [T→I] | fallback | reason | insight |"
+6. If useful: Extract patterns, insight references template file path
 
 ### If [I] Introspect:
 1. Pick 2-3 files from src/
-2. Analyze for: code smells, duplication, inconsistencies, improvements
-3. Insight should describe the finding
+2. Analyze specifically for theme-related concerns
+3. Also look for: code smells, duplication, inconsistencies
+4. Insight should describe the finding
 
 ### If [R] Research:
-1. Use WebSearch with 1 focused query
+1. Use WebSearch with 1 focused query related to theme
 2. Extract actionable patterns from results
 3. Insight should cite the source
 
-## Step 3: Focus Direction
-{Contents of FOCUS.md if exists, otherwise "General exploration"}
+### If [V] Verify:
+1. Run `npm run build` - verify code compiles
+2. Run `npm test` - see current test status
+3. Focus on testing theme-related functionality
+4. Create test files for untested modules (*.test.ts only)
+5. Insight should include build/test status
 
-## Step 4: Task
+## Step 3: Task
 Based on dream type findings:
 - Expand an existing loop with more detail
 - OR create a new loop based on discovered patterns
@@ -243,6 +294,8 @@ Append exactly one row to ITERATIONS.md:
 
 No prose. No explanations. Just the table row.
 
+**IMPORTANT: This is iteration {N} of {max_iterations}. Dream mode continues until /ds:wake or max reached.**
+
 ## Loop Plan Location
 {path to current loop plan}
 ```
@@ -253,7 +306,7 @@ ITERATIONS.md uses compact table format with Type column:
 
 ```markdown
 # Dream Session: {session-id}
-Focus: {focus} | Model: {model} | Limit: {max_iterations}
+Theme: {theme or "General"} | Model: {model} | Limit: {max_iterations}
 
 ## Previous Context
 - loop-01: {one-liner summary of what it does}
@@ -265,6 +318,8 @@ Focus: {focus} | Model: {model} | Limit: {max_iterations}
 | 1 | 00:05 | [T] | discover | templates/workflow | state machine pattern |
 | 2 | 00:12 | [I] | analyze | daemon/index | nesting in processTask |
 | 3 | 00:20 | [R] | research | file-watchers | chokidar debounce |
+| 4 | 00:28 | [V] | verify | npm test | build OK, 3/5 tests pass |
+| 5 | 00:35 | [T→I] | fallback | templates stale | daemon/ipc needs error handling |
 ```
 
 Each iteration appends ONE row. No prose between rows.
@@ -272,8 +327,8 @@ Each iteration appends ONE row. No prose between rows.
 Fields:
 - `{#}`: Iteration number
 - `{Time}`: MM:SS from session start
-- `{Type}`: [T], [I], or [R]
-- `{Action}`: discover|connect|refine|design|reflect|research|analyze
+- `{Type}`: [T], [I], [R], [V], or [T→I] (fallback from stale template)
+- `{Action}`: discover|connect|refine|design|reflect|research|analyze|verify|test|fallback
 - `{Target}`: Short identifier (file path, loop-id, search topic)
 - `{Insight}`: What you learned (max 10 words)
 
