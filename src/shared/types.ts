@@ -40,6 +40,7 @@ export interface FileChangePayload {
 
 export interface Config {
   daemon: {
+    provider: ProviderName;    // LLM provider (claude, opencode, codex, auto)
     dream_timeout_minutes: number;
     token_budget_per_hour: number;
     model: string;
@@ -128,6 +129,8 @@ export interface DreamState {
 }
 
 export type Model = 'haiku' | 'sonnet' | 'opus';
+
+export type ProviderName = 'claude' | 'opencode' | 'codex' | 'auto';
 
 export interface CommitInfo {
   hash: string;

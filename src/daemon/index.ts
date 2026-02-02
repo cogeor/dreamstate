@@ -6,13 +6,14 @@ import { TokenBudgetTracker } from './token-budget.js';
 import { DreamDetector } from './dream-detector.js';
 import { loadConfig, ensureDreamstateDir, getDreamstateDir, DAEMON_REQUEST_FILE } from '../shared/config.js';
 import type { DaemonStatus, Task, TaskResult, PingResult, FileTask, Config, DaemonRequest } from '../shared/types.js';
-import { runClaude } from './claude-cli.js';
+import { getProvider, type LLMProvider } from './providers/index.js';
 
 class Daemon {
   private ipc: IPC;
   private fileWatcher: FileWatcher;
   private tokenBudget: TokenBudgetTracker;
   private dreamDetector: DreamDetector;
+  private provider: LLMProvider | null = null;
   private workspaceRoot: string;
   private config: Config;
   private startedAt: Date;
@@ -49,8 +50,14 @@ class Daemon {
   private async processFileDirective(task: FileTask): Promise<void> {
     console.log(`[Daemon] Processing directive: ${task.instruction}`);
 
+    if (!this.provider) {
+      console.error('[Daemon] Provider not initialized');
+      return;
+    }
+
     // Check token budget
-    const estimatedTokens = this.tokenBudget.estimateTokens('haiku', 'medium');
+    const model = this.config.daemon.model;
+    const estimatedTokens = this.provider.estimateTokens(model, 'medium');
     if (!this.tokenBudget.canSpend(estimatedTokens)) {
       console.log('[Daemon] Token budget exceeded, skipping directive');
       return;
@@ -68,8 +75,8 @@ Instruction: ${task.instruction}
 Please complete this task. Be concise and focused on the specific instruction.`;
 
     try {
-      const result = await runClaude(prompt, {
-        model: 'haiku',
+      const result = await this.provider.run(prompt, {
+        model,
         workingDir: this.workspaceRoot,
       });
 
@@ -79,7 +86,7 @@ Please complete this task. Be concise and focused on the specific instruction.`;
         this.tokenBudget.recordUsage(
           `directive: ${task.instruction.slice(0, 30)}`,
           result.tokensUsed || estimatedTokens,
-          'haiku'
+          model
         );
       } else {
         console.error(`[Daemon] Directive failed: ${result.error}`);
@@ -189,9 +196,13 @@ Please complete this task. Be concise and focused on the specific instruction.`;
     }
   }
 
-  start(): void {
+  async start(): Promise<void> {
     if (this.running) return;
     this.running = true;
+
+    // Initialize provider
+    const providerName = this.config.daemon.provider || 'claude';
+    this.provider = await getProvider(providerName);
 
     // Write PID
     this.ipc.writePid(process.pid);
@@ -223,6 +234,7 @@ Please complete this task. Be concise and focused on the specific instruction.`;
     console.log('╚══════════════════════════════════════════╝');
     console.log('');
     console.log(`[Daemon] Started (PID: ${process.pid})`);
+    console.log(`[Daemon] Provider: ${this.provider.name}`);
     console.log(`[Daemon] Workspace: ${this.workspaceRoot}`);
     console.log(`[Daemon] IPC directory: ${this.workspaceRoot}/.dreamstate`);
     console.log('');

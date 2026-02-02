@@ -40,6 +40,7 @@ export const DAEMON_REQUEST_FILE = 'daemon-request.json';
 export function getDefaultConfig(): Config {
   return {
     daemon: {
+      provider: 'claude',  // Default provider (claude, opencode, codex, auto)
       dream_timeout_minutes: 5,
       token_budget_per_hour: 10000,
       model: 'haiku',

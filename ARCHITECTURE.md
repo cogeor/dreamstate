@@ -102,6 +102,7 @@ bin/
 ```json
 {
   "daemon": {
+    "provider": "claude",
     "dream_timeout_minutes": 5,
     "token_budget_per_hour": 10000,
     "model": "haiku",

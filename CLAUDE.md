@@ -86,6 +86,7 @@ Agent system prompt
 ```json
 {
   "daemon": {
+    "provider": "claude",
     "dream_timeout_minutes": 5,
     "token_budget_per_hour": 10000,
     "model": "haiku",
@@ -111,6 +112,7 @@ Agent system prompt
 **Config Options:**
 | Section | Option | Description |
 |---------|--------|-------------|
+| `daemon.provider` | LLM provider: `claude`, `opencode`, `codex`, or `auto` |
 | `daemon.auto_dream` | Auto-start dream mode when Claude Code is inactive |
 | `daemon.auto_dream.max_iterations` | Limit iterations per dream session (prevents context bloat) |
 | `docs` | Background documentation generation settings |
