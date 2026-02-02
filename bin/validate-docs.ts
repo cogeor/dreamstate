@@ -28,7 +28,8 @@ interface ValidationContext {
 
 function getStagedFiles(): string[] {
   try {
-    const output = execSync('git diff --cached --name-only', { encoding: 'utf-8' });
+    // Use --diff-filter=d to exclude deleted files (fixes false positives on renames)
+    const output = execSync('git diff --cached --name-only --diff-filter=d', { encoding: 'utf-8' });
     return output.trim().split('\n').filter(f => f.length > 0);
   } catch {
     return [];
