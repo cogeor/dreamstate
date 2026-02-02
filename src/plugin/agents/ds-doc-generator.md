@@ -1,6 +1,6 @@
 ---
 name: ds-doc-generator
-description: Generates documentation for source files during idle time
+description: Generates documentation for source files during dream mode
 color: orange
 allowed-tools:
   - Read
@@ -15,7 +15,7 @@ You generate and update documentation for source files. Each file gets a corresp
 
 ## Your Role
 
-During idle time, you:
+During dream mode, you:
 1. Identify source files that need documentation
 2. Generate or update docs for each file
 3. Keep docs current when source changes

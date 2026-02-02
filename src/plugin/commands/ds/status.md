@@ -1,17 +1,17 @@
 ---
 name: ds:status
-description: Show dreamstate daemon and idle mode status
+description: Show dreamstate daemon and dream mode status
 allowed-tools:
   - Read
 ---
 
 <objective>
-Display the current status of the dreamstate daemon and idle mode.
+Display the current status of the dreamstate daemon and dream mode.
 </objective>
 
 <instructions>
 1. Read `.dreamstate/daemon.status` for daemon state
-2. Read `.dreamstate/idle.state` for idle mode state
+2. Read `.dreamstate/dream.state` for dream mode state
 3. Display formatted status information
 </instructions>
 
@@ -20,7 +20,7 @@ Display the current status of the dreamstate daemon and idle mode.
    - Check if `lastActivity` is within last 10 seconds
    - If stale, daemon is stopped
 
-2. Read `.dreamstate/idle.state` and parse as JSON
+2. Read `.dreamstate/dream.state` and parse as JSON
    - Check if `active` is true
    - Show iteration count and current loop plan
 
@@ -46,7 +46,7 @@ Token Budget:
   Status:   {Active|Paused}
   Resets:   {minutes until reset}
 
-Idle Mode:  {Active|Inactive}
+Dream Mode: {Active|Inactive}
 Model:      {model if active}
 Focus:      {prompt if provided, else "General exploration"}
 Iterations: {count if active}
@@ -60,9 +60,9 @@ Loops:
 Watching:   {patterns}
 
 Commands:
-  /ds:idle [model] [prompt]  - Enter idle mode with optional focus
-  /ds:wake                   - Stop idle mode
-  /ds:loop                   - Run a loop
+  /ds:dream [model] [prompt]  - Enter dream mode with optional focus
+  /ds:wake                    - Stop dream mode
+  /ds:loop                    - Run a loop
 ```
 
 When daemon not running:

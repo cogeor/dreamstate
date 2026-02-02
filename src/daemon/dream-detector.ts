@@ -1,26 +1,26 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { getDreamstateDir } from '../shared/config.js';
-import type { IdleState } from '../shared/types.js';
+import type { DreamState } from '../shared/types.js';
 
-const IDLE_STATE_FILE = 'idle.state';
+const DREAM_STATE_FILE = 'dream.state';
 const ACTIVITY_FILE = 'last-activity.txt';
 
-export interface IdleDetectorConfig {
-  idleTimeoutMinutes: number;
+export interface DreamDetectorConfig {
+  dreamTimeoutMinutes: number;
   model: string;
-  onIdleStart?: () => void;
-  onIdleEnd?: () => void;
+  onDreamStart?: () => void;
+  onDreamEnd?: () => void;
 }
 
-export class IdleDetector {
+export class DreamDetector {
   private workspaceRoot: string;
-  private config: IdleDetectorConfig;
+  private config: DreamDetectorConfig;
   private lastActivityTime: number;
-  private isIdle: boolean = false;
+  private isDreaming: boolean = false;
   private checkIntervalId: NodeJS.Timeout | null = null;
 
-  constructor(workspaceRoot: string, config: IdleDetectorConfig) {
+  constructor(workspaceRoot: string, config: DreamDetectorConfig) {
     this.workspaceRoot = workspaceRoot;
     this.config = config;
     this.lastActivityTime = Date.now();
@@ -31,8 +31,8 @@ export class IdleDetector {
     return join(getDreamstateDir(this.workspaceRoot), ACTIVITY_FILE);
   }
 
-  private getIdleStatePath(): string {
-    return join(getDreamstateDir(this.workspaceRoot), IDLE_STATE_FILE);
+  private getDreamStatePath(): string {
+    return join(getDreamstateDir(this.workspaceRoot), DREAM_STATE_FILE);
   }
 
   private loadLastActivity(): void {
@@ -56,11 +56,11 @@ export class IdleDetector {
     this.lastActivityTime = Date.now();
     writeFileSync(this.getActivityPath(), String(this.lastActivityTime));
 
-    // If we were idle, transition out
-    if (this.isIdle) {
-      this.isIdle = false;
-      console.log('[IdleDetector] Activity detected, exiting idle state');
-      this.config.onIdleEnd?.();
+    // If we were dreaming, transition out
+    if (this.isDreaming) {
+      this.isDreaming = false;
+      console.log('[DreamDetector] Activity detected, exiting dream state');
+      this.config.onDreamEnd?.();
     }
   }
 
@@ -68,37 +68,37 @@ export class IdleDetector {
    * Check if system is idle (no activity for N minutes)
    */
   checkIdle(): boolean {
-    const idleMs = this.config.idleTimeoutMinutes * 60 * 1000;
+    const idleMs = this.config.dreamTimeoutMinutes * 60 * 1000;
     const timeSinceActivity = Date.now() - this.lastActivityTime;
     return timeSinceActivity >= idleMs;
   }
 
   /**
-   * Get current idle state from file
+   * Get current dream state from file
    */
-  getIdleState(): IdleState | null {
-    const path = this.getIdleStatePath();
+  getDreamState(): DreamState | null {
+    const path = this.getDreamStatePath();
     if (!existsSync(path)) return null;
     try {
-      return JSON.parse(readFileSync(path, 'utf-8')) as IdleState;
+      return JSON.parse(readFileSync(path, 'utf-8')) as DreamState;
     } catch {
       return null;
     }
   }
 
   /**
-   * Check if idle mode is manually active (via /ds:idle)
+   * Check if dream mode is manually active (via /ds:dream)
    */
-  isManualIdleActive(): boolean {
-    const state = this.getIdleState();
+  isManualDreamActive(): boolean {
+    const state = this.getDreamState();
     return state?.active === true;
   }
 
   /**
-   * Get minutes until idle triggers (or 0 if already idle)
+   * Get minutes until dream triggers (or 0 if already idle)
    */
-  getMinutesUntilIdle(): number {
-    const idleMs = this.config.idleTimeoutMinutes * 60 * 1000;
+  getMinutesUntilDream(): number {
+    const idleMs = this.config.dreamTimeoutMinutes * 60 * 1000;
     const timeSinceActivity = Date.now() - this.lastActivityTime;
     const remaining = idleMs - timeSinceActivity;
     return Math.max(0, Math.ceil(remaining / 60000));
@@ -118,14 +118,14 @@ export class IdleDetector {
   start(): void {
     // Check every 30 seconds
     this.checkIntervalId = setInterval(() => {
-      if (this.checkIdle() && !this.isIdle && !this.isManualIdleActive()) {
-        this.isIdle = true;
-        console.log(`[IdleDetector] System idle for ${this.config.idleTimeoutMinutes} minutes`);
-        this.config.onIdleStart?.();
+      if (this.checkIdle() && !this.isDreaming && !this.isManualDreamActive()) {
+        this.isDreaming = true;
+        console.log(`[DreamDetector] System idle for ${this.config.dreamTimeoutMinutes} minutes`);
+        this.config.onDreamStart?.();
       }
     }, 30000);
 
-    console.log(`[IdleDetector] Started (timeout: ${this.config.idleTimeoutMinutes} minutes)`);
+    console.log(`[DreamDetector] Started (timeout: ${this.config.dreamTimeoutMinutes} minutes)`);
   }
 
   /**
@@ -136,6 +136,6 @@ export class IdleDetector {
       clearInterval(this.checkIntervalId);
       this.checkIntervalId = null;
     }
-    console.log('[IdleDetector] Stopped');
+    console.log('[DreamDetector] Stopped');
   }
 }

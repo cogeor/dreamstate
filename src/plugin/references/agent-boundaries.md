@@ -14,7 +14,7 @@ Claude Code agents are defined with `allowed-tools` in their YAML frontmatter. T
 | ds-planner | ✓ | ✓ | - | ✓ | ✓ | - | - | - |
 | ds-executor | ✓ | ✓ | ✓ | - | - | ✓ | - | - |
 | ds-tester | ✓ | ✓ | - | ✓ | ✓ | ✓ | - | - |
-| ds-idle-planner | ✓ | ✓ | - | ✓ | ✓ | - | - | ✓ |
+| ds-dream-planner | ✓ | ✓ | - | ✓ | ✓ | - | - | ✓ |
 | ds-doc-generator | ✓ | ✓ | - | ✓ | - | - | - | - |
 
 ## Rationale
@@ -24,10 +24,10 @@ Claude Code agents are defined with `allowed-tools` in their YAML frontmatter. T
 - **Effect**: Prevents "exploring for more context" which dilutes focus
 - **Alternative**: If task needs files, Planner includes them in the spec
 
-### ds-idle-planner: No Bash
-- **Why**: Read-only planning mode during idle
+### ds-dream-planner: No Bash
+- **Why**: Read-only planning mode during dream
 - **Effect**: Cannot execute code or run tests
-- **Alternative**: Focus is on template exploration and plan refinement
+- **Alternative**: Focus is on template exploration, code introspection, and plan refinement
 
 ### ds-doc-generator: No Grep
 - **Why**: Focused on single-file documentation
@@ -52,7 +52,7 @@ Beyond tool restrictions, agents follow these context rules:
 2. **Planner**: Sees draft and project structure, not execution logs
 3. **Executor**: Sees task spec, not other tasks or loops
 4. **Tester**: Sees implementation to verify, not planning rationale
-5. **Idle Planner**: Sees templates and mission, not active loops
+5. **Dream Planner**: Sees templates, src/ code, and mission based on dream type
 
 ## Enforcement Verification
 

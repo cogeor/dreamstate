@@ -1,32 +1,32 @@
 ---
 name: ds:wake
-description: Stop idle mode and return control to human
+description: Stop dream mode and return control to human
 allowed-tools:
   - Read
   - Write
 ---
 
 <objective>
-Stop the idle mode loop and return control to the human user.
+Stop the dream mode loop and return control to the human user.
 </objective>
 
 <execution>
-1. Read .dreamstate/idle.state
+1. Read .dreamstate/dream.state
 
-2. If not in idle mode:
+2. If not in dream mode:
    ```
-   Not in idle mode. Nothing to wake from.
+   Not in dream mode. Nothing to wake from.
    ```
 
-3. If in idle mode:
+3. If in dream mode:
    - Set active = false
    - Set stoppedAt = current timestamp
-   - Write updated state to .dreamstate/idle.state
+   - Write updated state to .dreamstate/dream.state
 
 4. Report summary:
    ```
-   Idle Mode Stopped
-   ━━━━━━━━━━━━━━━━━
+   Dream Mode Stopped
+   ━━━━━━━━━━━━━━━━━━
    Duration: {time since startedAt}
    Iterations: {count}
    Model: {model}
@@ -35,17 +35,16 @@ Stop the idle mode loop and return control to the human user.
 
    Summary of work done:
    - {count} iterations completed
-   - {N} loops refined
-   - {M} new loops added
+   - Types: [T]={t_count} [I]={i_count} [R]={r_count}
 
    To review: Read {currentLoopPlan}/ITERATIONS.md
-   To continue idle: /ds:idle
+   To continue dream: /ds:dream
    To run a loop: /ds:loop {path-to-loop-draft}
    ```
 </execution>
 
 <state-update>
-Update .dreamstate/idle.state:
+Update .dreamstate/dream.state:
 ```json
 {
   "active": false,

@@ -5,7 +5,7 @@ import type { Config, LoopStatus, DaemonRequest } from './types.js';
 export const DREAMSTATE_DIR = '.dreamstate';
 export const STATUS_FILE = 'daemon.status';
 export const PID_FILE = 'daemon.pid';
-export const IDLE_STATE_FILE = 'idle.state';
+export const DREAM_STATE_FILE = 'dream.state';
 export const TASKS_DIR = 'tasks';
 export const RESULTS_DIR = 'results';
 export const CONFIG_FILE = 'config.json';
@@ -40,13 +40,13 @@ export const DAEMON_REQUEST_FILE = 'daemon-request.json';
 export function getDefaultConfig(): Config {
   return {
     daemon: {
-      idle_timeout_minutes: 5,
+      dream_timeout_minutes: 5,
       token_budget_per_hour: 10000,
       model: 'haiku',
-      auto_idle: {
+      auto_dream: {
         enabled: false,  // Disabled by default - user must opt-in
         model: 'haiku',
-        max_iterations: 10,  // Throttle: max iterations per idle session
+        max_iterations: 10,  // Throttle: max iterations per dream session
         prompt: undefined
       }
     },
@@ -73,9 +73,9 @@ export function loadConfig(workspaceRoot: string): Config {
         daemon: {
           ...defaults.daemon,
           ...userConfig.daemon,
-          auto_idle: {
-            ...defaults.daemon.auto_idle,
-            ...(userConfig.daemon?.auto_idle || {})
+          auto_dream: {
+            ...defaults.daemon.auto_dream,
+            ...(userConfig.daemon?.auto_dream || {})
           }
         },
         watch: { ...defaults.watch, ...userConfig.watch },

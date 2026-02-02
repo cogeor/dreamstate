@@ -3,7 +3,7 @@ import { join } from 'path';
 import { IPC } from './ipc.js';
 import { FileWatcher } from './file-watcher.js';
 import { TokenBudgetTracker } from './token-budget.js';
-import { IdleDetector } from './idle-detector.js';
+import { DreamDetector } from './dream-detector.js';
 import { loadConfig, ensureDreamstateDir, getDreamstateDir, DAEMON_REQUEST_FILE } from '../shared/config.js';
 import type { DaemonStatus, Task, TaskResult, PingResult, FileTask, Config, DaemonRequest } from '../shared/types.js';
 import { runClaude } from './claude-cli.js';
@@ -12,7 +12,7 @@ class Daemon {
   private ipc: IPC;
   private fileWatcher: FileWatcher;
   private tokenBudget: TokenBudgetTracker;
-  private idleDetector: IdleDetector;
+  private dreamDetector: DreamDetector;
   private workspaceRoot: string;
   private config: Config;
   private startedAt: Date;
@@ -33,11 +33,11 @@ class Daemon {
 
     this.tokenBudget = new TokenBudgetTracker(workspaceRoot, config.daemon.token_budget_per_hour);
 
-    this.idleDetector = new IdleDetector(workspaceRoot, {
-      idleTimeoutMinutes: config.daemon.idle_timeout_minutes,
+    this.dreamDetector = new DreamDetector(workspaceRoot, {
+      dreamTimeoutMinutes: config.daemon.dream_timeout_minutes,
       model: config.daemon.model,
-      onIdleStart: () => this.handleIdleStart(),
-      onIdleEnd: () => this.handleIdleEnd(),
+      onDreamStart: () => this.handleDreamStart(),
+      onDreamEnd: () => this.handleDreamEnd(),
     });
 
     this.fileWatcher = new FileWatcher(workspaceRoot, config, {
@@ -57,7 +57,7 @@ class Daemon {
     }
 
     // Record activity
-    this.idleDetector.recordActivity();
+    this.dreamDetector.recordActivity();
 
     // Build prompt with file context
     const prompt = `File: ${task.filePath}
@@ -89,38 +89,38 @@ Please complete this task. Be concise and focused on the specific instruction.`;
     }
   }
 
-  private handleIdleStart(): void {
-    // Check token budget before auto-starting idle tasks
+  private handleDreamStart(): void {
+    // Check token budget before auto-starting dream tasks
     if (this.tokenBudget.isOverBudget()) {
-      console.log('[Daemon] Idle detected but token budget exceeded, skipping auto-idle');
+      console.log('[Daemon] Idle detected but token budget exceeded, skipping auto-dream');
       return;
     }
 
-    // Check if auto-idle is enabled
-    const autoIdle = this.config.daemon.auto_idle;
-    if (!autoIdle.enabled) {
-      console.log('[Daemon] Idle detected (auto-idle disabled, use /ds:idle manually)');
+    // Check if auto-dream is enabled
+    const autoDream = this.config.daemon.auto_dream;
+    if (!autoDream.enabled) {
+      console.log('[Daemon] Idle detected (auto-dream disabled, use /ds:dream manually)');
       return;
     }
 
     // Write daemon request for the prompt-submit hook to pick up
     const request: DaemonRequest = {
-      id: `auto-idle-${Date.now()}`,
-      action: 'start-idle',
-      model: autoIdle.model,
-      max_iterations: autoIdle.max_iterations,
-      prompt: autoIdle.prompt,
+      id: `auto-dream-${Date.now()}`,
+      action: 'start-dream',
+      model: autoDream.model,
+      max_iterations: autoDream.max_iterations,
+      prompt: autoDream.prompt,
       createdAt: new Date().toISOString()
     };
 
     const requestPath = join(getDreamstateDir(this.workspaceRoot), DAEMON_REQUEST_FILE);
     writeFileSync(requestPath, JSON.stringify(request, null, 2));
 
-    console.log(`[Daemon] Auto-idle triggered - wrote request (model: ${autoIdle.model}, max: ${autoIdle.max_iterations})`);
+    console.log(`[Daemon] Auto-dream triggered - wrote request (model: ${autoDream.model}, max: ${autoDream.max_iterations})`);
   }
 
-  private handleIdleEnd(): void {
-    console.log('[Daemon] Activity resumed, idle tasks paused');
+  private handleDreamEnd(): void {
+    console.log('[Daemon] Activity resumed, dream tasks paused');
   }
 
   private queueTask(task: Task): void {
@@ -179,7 +179,7 @@ Please complete this task. Be concise and focused on the specific instruction.`;
     const tasks = this.ipc.getPendingTasks();
     for (const task of tasks) {
       // Record activity when processing tasks
-      this.idleDetector.recordActivity();
+      this.dreamDetector.recordActivity();
 
       const result = this.processTask(task);
       this.ipc.writeResult(result);
@@ -200,7 +200,7 @@ Please complete this task. Be concise and focused on the specific instruction.`;
     this.fileWatcher.start();
 
     // Start idle detector
-    this.idleDetector.start();
+    this.dreamDetector.start();
 
     // Initial status
     this.updateStatus();
@@ -255,7 +255,7 @@ Please complete this task. Be concise and focused on the specific instruction.`;
     }
 
     this.fileWatcher.stop();
-    this.idleDetector.stop();
+    this.dreamDetector.stop();
     this.ipc.clearPid();
 
     console.log('[Daemon] Stopped');

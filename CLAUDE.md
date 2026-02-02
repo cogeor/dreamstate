@@ -26,9 +26,9 @@ npm run install:claude  # Install plugin to Claude Code
 | Command | Purpose |
 |---------|---------|
 | `/ds:ping` | Test daemon connectivity |
-| `/ds:status` | Show daemon and idle status |
-| `/ds:idle [model]` | Enter idle mode (haiku/sonnet/opus) |
-| `/ds:wake` | Stop idle mode |
+| `/ds:status` | Show daemon and dream status |
+| `/ds:dream [model]` | Enter dream mode (haiku/sonnet/opus) |
+| `/ds:wake` | Stop dream mode |
 | `/ds:loop [path]` | Start plan/implement/test loop |
 | `/ds:verify-loop [id]` | Complete loop reflection |
 
@@ -39,8 +39,8 @@ npm run install:claude  # Install plugin to Claude Code
 | `ds-planner` | Creates implementation plans |
 | `ds-executor` | Implements tasks |
 | `ds-tester` | Verifies implementation |
-| `ds-idle-planner` | Refines loop plans during idle |
-| `ds-doc-generator` | Generates documentation during idle |
+| `ds-dream-planner` | Explores and plans during dream mode |
+| `ds-doc-generator` | Generates documentation during dream mode |
 
 ## Plugin Development
 
@@ -86,10 +86,10 @@ Agent system prompt
 ```json
 {
   "daemon": {
-    "idle_timeout_minutes": 5,
+    "dream_timeout_minutes": 5,
     "token_budget_per_hour": 10000,
     "model": "haiku",
-    "auto_idle": {
+    "auto_dream": {
       "enabled": false,
       "model": "haiku",
       "max_iterations": 10,
@@ -111,7 +111,7 @@ Agent system prompt
 **Config Options:**
 | Section | Option | Description |
 |---------|--------|-------------|
-| `daemon.auto_idle` | Auto-start idle mode when Claude Code is inactive |
-| `daemon.auto_idle.max_iterations` | Limit iterations per idle session (prevents context bloat) |
+| `daemon.auto_dream` | Auto-start dream mode when Claude Code is inactive |
+| `daemon.auto_dream.max_iterations` | Limit iterations per dream session (prevents context bloat) |
 | `docs` | Background documentation generation settings |
 | `docs.patterns` | Files to generate docs for |

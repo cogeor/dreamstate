@@ -40,14 +40,14 @@ export interface FileChangePayload {
 
 export interface Config {
   daemon: {
-    idle_timeout_minutes: number;
+    dream_timeout_minutes: number;
     token_budget_per_hour: number;
     model: string;
-    auto_idle: {
-      enabled: boolean;        // Whether to request idle mode when user is idle
-      model: 'haiku' | 'sonnet' | 'opus';  // Model to use for auto-idle
-      max_iterations: number;  // Max iterations per idle session (throttle)
-      prompt?: string;         // Optional focus prompt for idle sessions
+    auto_dream: {
+      enabled: boolean;        // Whether to request dream mode when user is idle
+      model: 'haiku' | 'sonnet' | 'opus';  // Model to use for auto-dream
+      max_iterations: number;  // Max iterations per dream session (throttle)
+      prompt?: string;         // Optional focus prompt for dream sessions
     };
   };
   watch: {
@@ -63,7 +63,7 @@ export interface Config {
 
 export interface DaemonRequest {
   id: string;
-  action: 'start-idle' | 'stop-idle';
+  action: 'start-dream' | 'stop-dream';
   model?: string;
   max_iterations?: number;
   prompt?: string;
@@ -110,7 +110,7 @@ export interface LoopPlan {
   executionOrder: string[][]; // Groups of loop IDs that can run in parallel
 }
 
-export interface IdleState {
+export interface DreamState {
   active: boolean;
   startedAt: string | null;
   stoppedAt?: string | null;
@@ -120,9 +120,14 @@ export interface IdleState {
   currentLoopPlan: string | null;  // Path to active loop_plan folder
   lastIteration: string | null;
   tokensUsed: number;
+  session_summaries?: Array<{
+    sessionId: string;
+    iterations: number;
+    summary: string;
+  }>;
 }
 
-export type IdleModel = 'haiku' | 'sonnet' | 'opus';
+export type Model = 'haiku' | 'sonnet' | 'opus';
 
 export interface CommitInfo {
   hash: string;

@@ -1,8 +1,8 @@
 import { spawn } from 'child_process';
-import type { IdleModel } from '../shared/types.js';
+import type { Model } from '../shared/types.js';
 
 export interface ClaudeCliOptions {
-  model?: IdleModel;
+  model?: Model;
   maxTokens?: number;
   workingDir?: string;
   timeout?: number; // ms
@@ -16,7 +16,7 @@ export interface ClaudeCliResult {
 }
 
 // Approximate token counts by model
-const MODEL_TOKEN_ESTIMATES: Record<IdleModel, number> = {
+const MODEL_TOKEN_ESTIMATES: Record<Model, number> = {
   haiku: 2000,
   sonnet: 4000,
   opus: 8000,
@@ -108,6 +108,6 @@ export async function runClaudeAgent(
 /**
  * Estimate tokens for an operation based on model
  */
-export function estimateTokens(model: IdleModel): number {
+export function estimateTokens(model: Model): number {
   return MODEL_TOKEN_ESTIMATES[model];
 }
