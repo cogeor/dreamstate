@@ -6,13 +6,15 @@
  */
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
-import { spawn, execSync } from 'child_process';
+import { spawn } from 'child_process';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const projectRoot = join(__dirname, '..');
+
+// Use CLAUDE_PLUGIN_ROOT when running as plugin, fallback to __dirname for dev
+const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT || join(__dirname, '..', '..');
 
 // Get workspace from CWD (Claude Code runs hooks in workspace)
 const workspace = process.cwd();
@@ -52,7 +54,7 @@ function main(): void {
   }
 
   // Path to the daemon entry point
-  const daemonScript = join(projectRoot, 'dist', 'daemon', 'index.js');
+  const daemonScript = join(pluginRoot, 'dist', 'daemon', 'index.js');
 
   if (!existsSync(daemonScript)) {
     console.error(`[dreamstate] Daemon script not found: ${daemonScript}`);
@@ -75,7 +77,7 @@ WshShell.Run "node ""${daemonScript.replace(/\\/g, '\\\\')}""", 0, False
 
     // Run the VBS script which will launch node hidden
     const vbs = spawn('wscript', [vbsPath], {
-      cwd: projectRoot,
+      cwd: pluginRoot,
       detached: true,
       stdio: 'ignore',
       env: { ...process.env, DREAMSTATE_WORKSPACE: workspace },
@@ -94,7 +96,7 @@ WshShell.Run "node ""${daemonScript.replace(/\\/g, '\\\\')}""", 0, False
   } else {
     // On Unix, standard detached spawn works fine
     const daemon = spawn('node', [daemonScript], {
-      cwd: projectRoot,
+      cwd: pluginRoot,
       detached: true,
       stdio: 'ignore',
       env: { ...process.env, DREAMSTATE_WORKSPACE: workspace },
