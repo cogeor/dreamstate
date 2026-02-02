@@ -78,10 +78,13 @@ To stop: /ds:wake
      "iterations": 0,
      "currentLoopPlan": "{path}",
      "lastIteration": null,
-     "tokensUsed": 0
+     "tokensUsed": 0,
+     "session_summaries": []
    }
    ```
    Write to .dreamstate/idle.state
+
+   **Note**: Preserve existing `session_summaries` from previous idle.state if present.
 
 5. If prompt provided, write to {loop_plan}/FOCUS.md:
    ```markdown
@@ -98,15 +101,20 @@ To stop: /ds:wake
 
 6. Start iteration loop:
    ```
-   max_iterations = config.daemon.auto_idle.max_iterations (default 10)
+   max_iterations = config.daemon.auto_idle.max_iterations
+   # Find config value: grep "max_iterations" .dreamstate/config.json
+
+   # Load previous session summaries for context injection
+   previous_summaries = idle.state.session_summaries (or [] if none)
 
    WHILE idle.state.active == true:
      - Read current loop plan
      - Read FOCUS.md if exists
      - Read existing loop_plans/*/DRAFT.md for context (first 20 lines each)
+     - Build "Previous Sessions" section from previous_summaries
      - Spawn ds-idle-planner with:
          model={model}
-         prompt=See "Iteration Prompt Template" below
+         prompt=See "Iteration Prompt Template" below (includes Previous Sessions)
      - Agent appends ONE table row to ITERATIONS.md
      - Increment iterations
      - Update idle.state
@@ -120,7 +128,22 @@ To stop: /ds:wake
      - Brief pause (5 seconds)
    ```
 
-7. Report idle mode started:
+7. On idle mode stop (via /ds:wake or max_iterations reached):
+   ```
+   - Read ITERATIONS.md from current session
+   - Extract key findings (look for ## Findings section or last 3 iterations)
+   - Create session summary:
+     {
+       "sessionId": "{loop_plan_folder_name}",
+       "iterations": {count},
+       "summary": "{prompt or 'General exploration'}: {key findings}"
+     }
+   - Append to idle.state.session_summaries
+   - Keep only last 5 session summaries (prevent unbounded growth)
+   - Write updated idle.state
+   ```
+
+8. Report idle mode started:
    ```
    Idle Mode Active
    ━━━━━━━━━━━━━━━━
@@ -140,6 +163,12 @@ When spawning ds-idle-planner, use this prompt structure:
 ```markdown
 # Idle Mode Iteration {N} of {max_iterations}
 
+## Previous Sessions (Context Preservation)
+{For each session in session_summaries:}
+- {sessionId} ({iterations} iter): {summary}
+
+{If no previous sessions: "First idle session - no prior context."}
+
 ## Step 1: Read Previous Context (MANDATORY)
 Before any work, understand what exists:
 1. Read .dreamstate/loop_plans/*/DRAFT.md (first 20 lines each)
@@ -155,7 +184,7 @@ Before any work, understand what exists:
 {Contents of FOCUS.md if exists, otherwise "General exploration"}
 
 ## Step 4: Task
-Based on previous context and template insights:
+Based on previous sessions, context, and template insights:
 - Expand an existing loop with more detail
 - OR create a new loop based on discovered patterns
 - OR update MISSION.md with insights

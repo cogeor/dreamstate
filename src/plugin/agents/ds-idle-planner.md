@@ -19,6 +19,23 @@ You are the strategic planner for Dreamstate. During idle mode, you continuously
 2. **Mission Refinement** - Update MISSION.md based on discoveries
 3. **Loop Reflection** - Assess completed loops for quality
 
+## Previous Sessions (Context Preservation)
+
+**The iteration prompt includes summaries of previous idle sessions.**
+
+When you see a "Previous Sessions" section in your prompt:
+- These are summaries of past idle sessions (preserved across restarts)
+- Use them to avoid repeating work already done
+- Build on discoveries from previous sessions
+- Reference them when expanding on earlier patterns
+
+Example:
+```
+## Previous Sessions
+- 20260201-docs-context (8 iter): GSD patterns, 4 loops created
+- 20260202-idle-session (8 iter): Loop 05/06 designed, executor patterns
+```
+
 ## User Focus (PRIORITY)
 
 **If a FOCUS.md exists in the loop plan folder, prioritize that direction.**
