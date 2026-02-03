@@ -12,12 +12,27 @@ Separate exploration from execution. Plans propose, do executes.
 
 ## Install
 
+**Prerequisites:** Node.js 18+, Claude Code CLI
+
 ```bash
-npm install
-npm run build
+git clone <repo-url> && cd delegate
+npm install && npm run build
+npx delegate-claude install
 ```
 
-The plugin auto-registers via `.claude-plugin/plugin.json`. The daemon auto-starts with Claude Code sessions via hooks.
+The installer copies commands, agents, and hooks into `~/.claude/` where Claude Code discovers them automatically. No marketplace or plugin registration required.
+
+Restart Claude Code, then verify:
+
+```
+/dg:status
+```
+
+### Uninstall
+
+```bash
+npx delegate-claude uninstall
+```
 
 ## Commands
 
