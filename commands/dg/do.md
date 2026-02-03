@@ -30,8 +30,8 @@ Determine the execution mode from user input:
 | Input | Mode | Action |
 |-------|------|--------|
 | `plan` (no more args) | summary | List unimplemented loops. NO execution. |
-| `plan "prompt"` | plan-only | Create plan, report for review. NO implementation. |
-| `"prompt text"` | prompt | Create do plan, then execute full loop. |
+| `plan <text>` | plan-only | Create plan, report for review. NO implementation. |
+| `<text>` | prompt | Create do plan, then execute full loop. |
 | (no args) | draft | Find `plan_draft.md`, execute loop. |
 | `path/to/draft.md` | draft | Use specified draft, execute loop. |
 | `06` or `06 07 08` | loops | Execute specific loops from active do plan. |
@@ -39,12 +39,11 @@ Determine the execution mode from user input:
 | `--all` | all | Execute all pending loops from active do plan. |
 
 Detection rules:
-- Starts with `"` or `'` → prompt
-- Is `plan` → summary or plan-only
+- First word is `plan` → summary (if no more args) or plan-only (rest is prompt)
 - Is a number or range → loops
 - Contains `/` or ends with `.md` → draft path
 - Is `--all` → all pending
-- Anything else → treat as prompt
+- Anything else → treat as prompt (join all remaining args)
 
 ## Step 2: Execute Based on Mode
 
@@ -58,7 +57,7 @@ Detection rules:
 ### Mode: plan-only
 
 1. Create do plan folder: `.delegate/loop_plans/{YYYYMMDD-HHMMSS}-{slug}/`
-2. Analyze codebase, create DRAFT.md
+2. Analyze codebase, create DRAFT.md — everything after the `plan` keyword is the prompt, no quotes needed
 3. Spawn `dg-planner` → produces PLAN.md
 4. Analyze plan: complexity, risks, testability
 5. Report plan summary to user
@@ -67,7 +66,7 @@ Detection rules:
 ### Mode: prompt
 
 1. Create do plan folder: `.delegate/loop_plans/{YYYYMMDD-HHMMSS}-{slug}/`
-2. Analyze codebase, create DRAFT.md
+2. Analyze codebase, create DRAFT.md — all args are joined as the prompt, no quotes needed
 3. Show plan to user, then proceed to **Execute Loop** (Step 3)
 
 ### Mode: draft
