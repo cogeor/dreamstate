@@ -7,78 +7,51 @@ allowed-tools:
   - Bash
 ---
 
-<objective>
-Display the current status of the delegate daemon and plan mode. Also performs a live ping test to verify daemon responsiveness.
-</objective>
+# /dg:status - Show Delegate Status
 
-<instructions>
-1. Perform daemon ping test (quick responsiveness check)
-2. Read `.delegate/daemon.status` for daemon state
-3. Read `.delegate/plan.state` for plan mode state
-4. Display formatted status information
-</instructions>
+Read status files and display a formatted summary. Do not modify anything.
 
-<execution>
-## Step 1: Daemon Ping Test
+## Step 1: Ping Daemon
 
-1. Generate a unique task ID: `ping-{timestamp}-{random}`
-2. Write ping task to `.delegate/tasks/{id}.json`:
+1. Write a ping task to `.delegate/tasks/ping-{timestamp}.json`:
    ```json
-   {
-     "id": "ping-{timestamp}-{random}",
-     "type": "ping",
-     "payload": {},
-     "createdAt": "{ISO timestamp}"
-   }
+   {"id": "ping-{timestamp}", "type": "ping", "payload": {}, "createdAt": "{ISO}"}
    ```
-3. Poll `.delegate/results/{id}.json` every 200ms for up to 3 seconds
-4. Record result: responsive (with uptime) or not responding
-5. Clean up result file after reading
+2. Poll `.delegate/results/ping-{timestamp}.json` every 200ms, up to 3 seconds
+3. Record: responsive (with latency) or not responding
+4. Clean up the result file
 
-## Step 2: Read Status Files
+## Step 2: Read Status
 
-1. Read `.delegate/daemon.status` and parse as JSON
-   - Check if `lastActivity` is within last 10 seconds
-   - If stale, daemon is stopped
+1. Read `.delegate/daemon.status` — if `lastActivity` is stale (>10s), daemon is stopped
+2. Read `.delegate/plan.state` — check if plan mode is active
 
-2. Read `.delegate/plan.state` and parse as JSON
-   - Check if `active` is true
-   - Show iteration count and current do plan
+## Step 3: Count Loops
 
-## Step 3: Count Loop Status
+1. Glob `.delegate/loops/*/STATUS.md`
+2. Count completed vs in-progress
 
-1. Glob for `.delegate/loops/*/STATUS.md`
-2. For each, check if phase is "complete"
-3. Calculate completed vs in-progress
-</execution>
+## Step 4: Display
 
-<output-format>
 ```
 Delegate Status
 ===============
 
 Daemon:     {Running|Stopped}
   PID:      {pid}
-  Uptime:   {formatted uptime}
-  Ping:     {responded in Xms|not responding}
-  Tasks:    {tasksProcessed} processed
+  Uptime:   {uptime}
+  Ping:     {Xms|not responding}
 
 Token Budget:
-  Used:     {used}/{limit} tokens this hour
+  Used:     {used}/{limit} this hour
   Status:   {Active|Paused}
-  Resets:   {minutes until reset}
 
-Plan Mode: {Active|Inactive}
-  Model:    {model if active}
-  Theme:    {theme if provided, else "General exploration"}
-  Iter:     {count if active}
-  Plan:     {path if active}
+Plan Mode:  {Active|Inactive}
+  Model:    {model}
+  Theme:    {theme}
+  Iter:     {count}
 
-Loops:
-  Completed:  {total_complete}
-  In Progress: {in_progress}
-
-Watching:   {patterns}
+Loops:      {completed} complete, {in_progress} in progress
 
 Commands:
   /dg:plan [model] [theme]  - Enter plan mode
@@ -86,33 +59,4 @@ Commands:
   /dg:init                  - Initialize project
 ```
 
-When daemon not running:
-```
-Delegate Status
-===============
-
-Daemon: Not running
-  Ping: No response (daemon offline)
-
-Start with: npm run daemon
-```
-
-When daemon not responding to ping:
-```
-Daemon:     Running (stale)
-  PID:      {pid}
-  Ping:     Not responding (may be stuck)
-
-Troubleshooting:
-  - Check if daemon process is running: ps aux | grep daemon
-  - Restart daemon: npm run daemon
-```
-
-When token budget paused:
-```
-Token Budget: PAUSED
-  Used: {used}/{limit} tokens
-  Operations paused until budget resets
-  Manual resume: Update config or wait for hourly reset
-```
-</output-format>
+If daemon not running, show minimal output with `npm run daemon` hint.
