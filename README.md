@@ -22,7 +22,15 @@ npx delegate-claude install
 
 The installer copies commands, agents, and hooks into `~/.claude/` where Claude Code discovers them automatically. No marketplace or plugin registration required.
 
-Restart Claude Code, then verify:
+Restart Claude Code, then initialize delegate in your project:
+
+```
+/dg:init
+```
+
+This creates `.delegate/`, adds config, updates `.gitignore`, and adds usage docs to your `CLAUDE.md`.
+
+Verify everything is running:
 
 ```
 /dg:status
@@ -39,7 +47,7 @@ npx delegate-claude uninstall
 ```bash
 /dg:study                   # Enter study mode (continuous exploration)
 /dg:study sonnet testing     # Study with model and focus theme
-/dg:do "add dark mode"     # Plan then implement from prompt
+/dg:do add dark mode       # Plan then implement from prompt
 /dg:do plan                # Show all unimplemented loops
 /dg:do 02                  # Execute specific loop from plan
 /dg:status                 # Check daemon and plan status

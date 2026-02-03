@@ -50,8 +50,26 @@ Agent system prompt
 
 **Hooks** (configured via `.claude-plugin/plugin.json` -> `hooks/hooks.json`):
 - `SessionStart`: Auto-starts daemon
-- `UserPromptSubmit`: Processes daemon requests (e.g., auto-plan when idle)
+- `UserPromptSubmit`: Processes daemon requests (e.g., auto-study when idle)
 - `SessionEnd`: Cleans up daemon on exit
+
+## Delegate
+
+A loop is a focused unit of work that results in exactly one commit. Each loop has a draft describing what to do, acceptance tests for verification, and a clear scope. Loops are the fundamental unit — everything in delegate either creates loops or implements them.
+
+**Commands:**
+| Command | Purpose |
+|---------|---------|
+| `/dg:study [model] [theme]` | Study the codebase, propose loops |
+| `/dg:do [args]` | Implement one or more loops |
+| `/dg:status` | Show daemon and study status |
+
+**Workflow:**
+1. `/dg:study` — explores codebase, web, tests; produces loop drafts with acceptance criteria
+2. `/dg:do plan` — review proposed loops
+3. `/dg:do 02` or `/dg:do add logout button` — implement loops (plan, execute, test, commit each)
+
+Loop drafts live in `.delegate/loop_plans/`. Each draft includes acceptance tests that `/dg:do` uses to verify the implementation before committing.
 
 ## Project Structure
 

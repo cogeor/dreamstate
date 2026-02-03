@@ -30,7 +30,7 @@ Check if `.delegate/config.json` exists. If not, create:
     "model": "haiku",
     "plan_timeout_minutes": 5,
     "token_budget_per_hour": 10000,
-    "auto_plan": {
+    "auto_study": {
       "enabled": false,
       "model": "haiku",
       "max_iterations": 10,
@@ -63,27 +63,29 @@ If no `.gitignore` exists, create one with this content.
 
 ## Step 4: Update CLAUDE.md
 
-If `CLAUDE.md` doesn't contain a `## Delegate Plugin` section, append:
+If `CLAUDE.md` doesn't contain a `## Delegate` section, append:
 
 ```markdown
 
-## Delegate Plugin
+## Delegate
 
 This project uses the Delegate plugin for spec-driven development.
+
+**A loop is a focused unit of work that results in exactly one commit.** Each loop has a draft describing what to do, acceptance tests for verification, and a clear scope. Loops are the fundamental unit — everything in delegate either creates loops or implements them.
 
 **Commands:**
 | Command | Purpose |
 |---------|---------|
-| `/dg:status` | Show daemon and plan status |
-| `/dg:study [model] [theme]` | Enter study mode |
-| `/dg:do [args]` | Start plan/implement/test loop |
-| `/dg:init` | Initialize delegate in project |
+| `/dg:study [model] [theme]` | Study the codebase, propose loops |
+| `/dg:do [args]` | Implement one or more loops |
+| `/dg:status` | Show daemon and study status |
 
-**Configuration** (`.delegate/config.json`):
-- `daemon.model`: Default model (haiku/sonnet/opus)
-- `daemon.auto_plan.enabled`: Auto-start plan when idle
-- `daemon.token_budget_per_hour`: Hourly token limit
-- `watch.patterns`: File patterns to watch
+**Workflow:**
+1. `/dg:study` — explores codebase, web, tests; produces loop drafts with acceptance criteria
+2. `/dg:do plan` — review proposed loops
+3. `/dg:do 02` or `/dg:do add logout button` — implement loops (plan, execute, test, commit each)
+
+Loop drafts live in `.delegate/loop_plans/`. Each draft includes acceptance tests that `/dg:do` uses to verify the implementation before committing.
 ```
 
 If no `CLAUDE.md` exists, create one with a `# CLAUDE.md` header and the above content.
