@@ -1,7 +1,7 @@
 {
-  "name": "dreamstate-claude",
+  "name": "delegate-claude",
   "version": "0.1.0",
-  "description": "A Claude Code plugin with background daemon for spec-driven development",
+  "description": "A Claude Code plugin with background daemon for spec-driven development (delegate)",
   "type": "module",
   "scripts": {
     "build": "tsc",

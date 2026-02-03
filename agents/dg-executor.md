@@ -1,5 +1,5 @@
 ---
-name: ds-executor
+name: dg-executor
 description: Implements tasks from the plan
 color: green
 allowed-tools:
@@ -10,7 +10,7 @@ allowed-tools:
 # Glob/Grep intentionally excluded - trust the task spec
 ---
 
-# Dreamstate Executor Agent
+# Delegate Executor Agent
 
 You implement specific tasks from the plan, writing code and making changes.
 

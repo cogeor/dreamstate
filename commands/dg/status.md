@@ -1,6 +1,6 @@
 ---
-name: ds:status
-description: Show dreamstate daemon and audit mode status (user)
+name: dg:status
+description: Show delegate daemon and plan mode status (user)
 allowed-tools:
   - Read
   - Write
@@ -8,13 +8,13 @@ allowed-tools:
 ---
 
 <objective>
-Display the current status of the dreamstate daemon and audit mode. Also performs a live ping test to verify daemon responsiveness.
+Display the current status of the delegate daemon and plan mode. Also performs a live ping test to verify daemon responsiveness.
 </objective>
 
 <instructions>
 1. Perform daemon ping test (quick responsiveness check)
-2. Read `.dreamstate/daemon.status` for daemon state
-3. Read `.dreamstate/audit.state` for audit mode state
+2. Read `.delegate/daemon.status` for daemon state
+3. Read `.delegate/plan.state` for plan mode state
 4. Display formatted status information
 </instructions>
 
@@ -22,7 +22,7 @@ Display the current status of the dreamstate daemon and audit mode. Also perform
 ## Step 1: Daemon Ping Test
 
 1. Generate a unique task ID: `ping-{timestamp}-{random}`
-2. Write ping task to `.dreamstate/tasks/{id}.json`:
+2. Write ping task to `.delegate/tasks/{id}.json`:
    ```json
    {
      "id": "ping-{timestamp}-{random}",
@@ -31,31 +31,31 @@ Display the current status of the dreamstate daemon and audit mode. Also perform
      "createdAt": "{ISO timestamp}"
    }
    ```
-3. Poll `.dreamstate/results/{id}.json` every 200ms for up to 3 seconds
+3. Poll `.delegate/results/{id}.json` every 200ms for up to 3 seconds
 4. Record result: responsive (with uptime) or not responding
 5. Clean up result file after reading
 
 ## Step 2: Read Status Files
 
-1. Read `.dreamstate/daemon.status` and parse as JSON
+1. Read `.delegate/daemon.status` and parse as JSON
    - Check if `lastActivity` is within last 10 seconds
    - If stale, daemon is stopped
 
-2. Read `.dreamstate/audit.state` and parse as JSON
+2. Read `.delegate/plan.state` and parse as JSON
    - Check if `active` is true
-   - Show iteration count and current loop plan
+   - Show iteration count and current do plan
 
 ## Step 3: Count Loop Status
 
-1. Glob for `.dreamstate/loops/*/STATUS.md`
+1. Glob for `.delegate/loops/*/STATUS.md`
 2. For each, check if phase is "complete"
 3. Calculate completed vs in-progress
 </execution>
 
 <output-format>
 ```
-Dreamstate Status
-━━━━━━━━━━━━━━━━━
+Delegate Status
+===============
 
 Daemon:     {Running|Stopped}
   PID:      {pid}
@@ -68,7 +68,7 @@ Token Budget:
   Status:   {Active|Paused}
   Resets:   {minutes until reset}
 
-Audit Mode: {Active|Inactive}
+Plan Mode: {Active|Inactive}
   Model:    {model if active}
   Theme:    {theme if provided, else "General exploration"}
   Iter:     {count if active}
@@ -81,15 +81,15 @@ Loops:
 Watching:   {patterns}
 
 Commands:
-  /ds:audit [model] [theme]  - Enter audit mode
-  /ds:loop                   - Run a loop
-  /ds:init                   - Initialize project
+  /dg:plan [model] [theme]  - Enter plan mode
+  /dg:do                    - Run a do loop
+  /dg:init                  - Initialize project
 ```
 
 When daemon not running:
 ```
-Dreamstate Status
-━━━━━━━━━━━━━━━━━
+Delegate Status
+===============
 
 Daemon: Not running
   Ping: No response (daemon offline)

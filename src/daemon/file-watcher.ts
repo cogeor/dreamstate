@@ -3,11 +3,11 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import type { Config, Task, FileTask } from '../shared/types.js';
 
-// Regex to match @dreamstate directives
-// Supports: // @dreamstate: instruction
-//           # @dreamstate: instruction
-//           /* @dreamstate: instruction */
-const DIRECTIVE_REGEX = /@dreamstate:\s*(.+?)(?:\s*\*\/)?$/;
+// Regex to match @delegate directives
+// Supports: // @delegate: instruction
+//           # @delegate: instruction
+//           /* @delegate: instruction */
+const DIRECTIVE_REGEX = /@delegate:\s*(.+?)(?:\s*\*\/)?$/;
 
 export interface FileWatcherEvents {
   onFileChange: (task: Task) => void;
@@ -45,7 +45,7 @@ export class FileWatcher {
     });
 
     this.watcher.on('change', (filePath: string) => {
-      // Check for @dreamstate directives
+      // Check for @delegate directives
       const directives = this.scanForDirectives(filePath);
       if (directives.length > 0 && this.events.onFileDirective) {
         for (const directive of directives) {
@@ -84,7 +84,7 @@ export class FileWatcher {
   }
 
   /**
-   * Scan a file for @dreamstate directives
+   * Scan a file for @delegate directives
    */
   private scanForDirectives(filePath: string): FileTask[] {
     const directives: FileTask[] = [];

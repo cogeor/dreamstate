@@ -1,6 +1,6 @@
 ---
-name: ds:audit
-description: Enter audit mode - continuously explore and analyze the codebase
+name: dg:plan
+description: Enter plan mode - continuously explore and analyze the codebase
 allowed-tools:
   - Read
   - Write
@@ -12,55 +12,55 @@ allowed-tools:
 ---
 
 <objective>
-Enter audit mode with a specified model. Continuously iterate on exploration, code analysis, and external research until interrupted or max_iterations is reached.
+Enter plan mode with a specified model. Continuously iterate on exploration, code analysis, and external research until interrupted or max_iterations is reached.
 </objective>
 
 <usage>
-/ds:audit [model] [theme]
+/dg:plan [model] [theme]
 
 Arguments:
   model - haiku (default), sonnet, or opus
   theme - Optional overarching theme that guides ALL iterations
 
 The theme is NOT a one-time task. It's a lens through which every iteration views its work.
-Audit mode continues iterating until interrupted or max_iterations is reached.
+Plan mode continues iterating until interrupted or max_iterations is reached.
 
 Examples:
-  /ds:audit
-  /ds:audit haiku
-  /ds:audit sonnet "test coverage"           # Every iteration focuses on testing
-  /ds:audit "error handling"                  # All iterations examine error handling
-  /ds:audit opus "daemon architecture"        # Deep dive into daemon across all phases
+  /dg:plan
+  /dg:plan haiku
+  /dg:plan sonnet "test coverage"           # Every iteration focuses on testing
+  /dg:plan "error handling"                  # All iterations examine error handling
+  /dg:plan opus "daemon architecture"        # Deep dive into daemon across all phases
 
 If first argument is not a model name, it's treated as the theme (uses haiku).
 </usage>
 
 <behavior>
-Audit mode is a CONTINUOUS process that keeps running until interrupted.
+Plan mode is a CONTINUOUS process that keeps running until interrupted.
 
-Each iteration selects an audit TYPE and executes that exploration (4-phase cycle):
-- [T] Template - explore .dreamstate/templates/ for patterns
+Each iteration selects a plan TYPE and executes that exploration (4-phase cycle):
+- [T] Template - explore .delegate/templates/ for patterns
 - [I] Introspect - analyze src/ code for improvements
 - [R] Research - search web for external patterns
 - [V] Verify - run build, run tests, create tests for missing coverage
 
-The [V] Verify phase GROUNDS audits in reality by actually executing code.
+The [V] Verify phase GROUNDS plans in reality by actually executing code.
 
-The human can check progress anytime with /ds:status.
+The human can check progress anytime with /dg:status.
 To stop: interrupt the process (Ctrl+C).
 </behavior>
 
-<audit-types>
-## Audit Type Selection
+<plan-types>
+## Plan Type Selection
 
 Each iteration deterministically selects ONE type based on iteration number (4-phase cycle):
-- Iteration 1, 5, 9, 13...  → [T] Template
-- Iteration 2, 6, 10, 14... → [I] Introspect
-- Iteration 3, 7, 11, 15... → [R] Research
-- Iteration 4, 8, 12, 16... → [V] Verify
+- Iteration 1, 5, 9, 13...  -> [T] Template
+- Iteration 2, 6, 10, 14... -> [I] Introspect
+- Iteration 3, 7, 11, 15... -> [R] Research
+- Iteration 4, 8, 12, 16... -> [V] Verify
 
 ### Type [T] - Template Exploration (with fallback)
-- Read 1-2 files from .dreamstate/templates/
+- Read 1-2 files from .delegate/templates/
 - Extract patterns applicable to this project
 - Compare to existing implementation
 - Output insight references template file
@@ -69,7 +69,7 @@ Each iteration deterministically selects ONE type based on iteration number (4-p
 - Template patterns already implemented better in src/
 - Template is empty or irrelevant to current theme
 - No templates exist
-→ Fall back to [I] Introspect for this iteration
+-> Fall back to [I] Introspect for this iteration
 
 ### Type [I] - Code Introspection
 - Read 2-3 source files from src/
@@ -91,7 +91,7 @@ Each iteration deterministically selects ONE type based on iteration number (4-p
 - Create test files (*.test.ts only) for missing coverage
 - Output insight includes build/test status (e.g., "build OK, 5/8 tests pass")
 - MUST NOT modify non-test source code
-</audit-types>
+</plan-types>
 
 <execution>
 1. Parse arguments:
@@ -106,15 +106,15 @@ Each iteration deterministically selects ONE type based on iteration number (4-p
      theme = all args joined
    ```
 
-2. Check if already in audit mode:
-   - Read .dreamstate/audit.state
-   - If active, report "Already in audit mode. Interrupt to stop."
+2. Check if already in plan mode:
+   - Read .delegate/plan.state
+   - If active, report "Already in plan mode. Interrupt to stop."
 
-3. Create or continue loop plan:
-   - If no active plan, create new: .dreamstate/loop_plans/{timestamp}-audit-session/
+3. Create or continue do plan:
+   - If no active plan, create new: .delegate/loop_plans/{timestamp}-plan-session/
    - If resuming, use existing plan
 
-4. Initialize audit state:
+4. Initialize plan state:
    ```json
    {
      "active": true,
@@ -128,13 +128,13 @@ Each iteration deterministically selects ONE type based on iteration number (4-p
      "session_summaries": []
    }
    ```
-   Write to .dreamstate/audit.state
+   Write to .delegate/plan.state
 
-   **Note**: Preserve existing `session_summaries` from previous audit.state if present.
+   **Note**: Preserve existing `session_summaries` from previous plan.state if present.
 
 5. If theme provided, write to {loop_plan}/THEME.md:
    ```markdown
-   # Audit Session Theme
+   # Plan Session Theme
 
    > This theme guides ALL iterations. It is not a one-time task.
    > Every iteration should view its work through this lens.
@@ -155,35 +155,35 @@ Each iteration deterministically selects ONE type based on iteration number (4-p
 
 6. Start iteration loop:
    ```
-   max_iterations = config.daemon.auto_audit.max_iterations
-   # Find config value: grep "max_iterations" .dreamstate/config.json
+   max_iterations = config.daemon.auto_plan.max_iterations
+   # Find config value: grep "max_iterations" .delegate/config.json
 
    # Load previous session summaries for context injection
-   previous_summaries = audit.state.session_summaries (or [] if none)
+   previous_summaries = plan.state.session_summaries (or [] if none)
 
-   WHILE audit.state.active == true:
-     - Determine audit type: (iterations % 4) → 0=[T], 1=[I], 2=[R], 3=[V]
-     - Read current loop plan
+   WHILE plan.state.active == true:
+     - Determine plan type: (iterations % 4) -> 0=[T], 1=[I], 2=[R], 3=[V]
+     - Read current do plan
      - Read THEME.md if exists (this guides ALL iterations, not just one)
      - Build "Previous Sessions" section from previous_summaries
-     - Spawn ds-audit-planner with:
+     - Spawn dg-plan-planner with:
          model={model}
-         audit_type={type}
+         plan_type={type}
          prompt=See "Iteration Prompt Template" below
      - Agent appends ONE table row to ITERATIONS.md (with Type column)
      - Increment iterations
-     - Update audit.state
-     - Check if interrupted (audit.state.active == false)
+     - Update plan.state
+     - Check if interrupted (plan.state.active == false)
 
      - IF iterations >= max_iterations:
          - Stop loop
-         - Output: "Reached {max_iterations} iterations. Run /ds:audit to continue with fresh context."
-         - Set audit.state.active = false
+         - Output: "Reached {max_iterations} iterations. Run /dg:plan to continue with fresh context."
+         - Set plan.state.active = false
 
      - Brief pause (5 seconds)
    ```
 
-7. On audit mode stop (via interrupt or max_iterations reached):
+7. On plan mode stop (via interrupt or max_iterations reached):
    ```
    - Read ITERATIONS.md from current session
    - Extract key findings (look for ## Findings section or last 3 iterations)
@@ -193,46 +193,45 @@ Each iteration deterministically selects ONE type based on iteration number (4-p
        "iterations": {count},
        "summary": "{theme or 'General exploration'}: {key findings}"
      }
-   - Append to audit.state.session_summaries
+   - Append to plan.state.session_summaries
    - Keep only last 5 session summaries (prevent unbounded growth)
-   - Write updated audit.state
+   - Write updated plan.state
    ```
 
-8. Report audit mode started:
+8. Report plan mode started:
    ```
-   Audit Mode Active
-   ━━━━━━━━━━━━━━━━━
+   Plan Mode Active
+   ================
    Model: {model}
    Theme: {theme or "General exploration"}
-   Loop Plan: {path}
+   Do Plan: {path}
 
-   Types: [T]emplate → [I]ntrospect → [R]esearch → [V]erify (4-phase cycle)
+   Types: [T]emplate -> [I]ntrospect -> [R]esearch -> [V]erify (4-phase cycle)
 
    The theme guides ALL iterations - it's not a one-time task.
-   Audit mode will continuously iterate until interrupted or max_iterations.
-   Check progress: /ds:status
+   Plan mode will continuously iterate until interrupted or max_iterations.
+   Check progress: /dg:status
    ```
 </execution>
 
 <iteration-prompt-template>
-When spawning ds-audit-planner, pass this context:
+When spawning dg-plan-planner, pass this context:
 
 ```markdown
-# Audit Mode Iteration {N} of {max_iterations}
+# Plan Mode Iteration {N} of {max_iterations}
 
 Theme: {theme or "General exploration"}
 Type: {type} ([T]emplate, [I]ntrospect, [R]esearch, [V]erify)
-Loop Plan: {path}
+Do Plan: {path}
 
 ## Previous Sessions
 {For each session in session_summaries:}
 - {sessionId} ({iterations} iter): {summary}
 
-{If none: "First audit session."}
+{If none: "First plan session."}
 ```
 
-The agent knows its workflow from `src/plugin/agents/ds-audit-planner.md`.
-Type definitions are in `src/plugin/references/audit-types-and-constraints.md`.
+The agent knows its workflow from its agent definition.
 </iteration-prompt-template>
 
 <iteration-log>
@@ -246,10 +245,10 @@ Each iteration produces THREE artifacts:
 ```
 
 ### 2. OVERVIEW.md (create iter 1, update thereafter)
-Vision, implementation loops table, dependencies.
+Vision, implementation do items table, dependencies.
 
-### 3. Loop Draft File ({NN}-{slug}.md)
-Full structure per `src/plugin/references/loop-plan-structure.md`.
+### 3. Do Draft File ({NN}-{slug}.md)
+Full structure per loop-plan-structure reference.
 
-**Every iteration = 1 complete loop draft. No exceptions.**
+**Every iteration = 1 complete do draft. No exceptions.**
 </iteration-log>

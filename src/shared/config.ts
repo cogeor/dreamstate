@@ -2,10 +2,10 @@ import { existsSync, readFileSync, mkdirSync, writeFileSync, readdirSync, statSy
 import { join } from 'path';
 import type { Config, LoopStatus, DaemonRequest } from './types.js';
 
-export const DREAMSTATE_DIR = '.dreamstate';
+export const DELEGATE_DIR = '.delegate';
 export const STATUS_FILE = 'daemon.status';
 export const PID_FILE = 'daemon.pid';
-export const AUDIT_STATE_FILE = 'audit.state';
+export const PLAN_STATE_FILE = 'plan.state';
 export const TASKS_DIR = 'tasks';
 export const RESULTS_DIR = 'results';
 export const CONFIG_FILE = 'config.json';
@@ -15,12 +15,12 @@ export const TEMPLATES_DIR = 'templates';
 export const DOCS_DIR = 'docs';
 export const STATE_FILE = 'STATE.md';
 
-export function getDreamstateDir(workspaceRoot: string): string {
-  return join(workspaceRoot, DREAMSTATE_DIR);
+export function getDelegateDir(workspaceRoot: string): string {
+  return join(workspaceRoot, DELEGATE_DIR);
 }
 
-export function ensureDreamstateDir(workspaceRoot: string): string {
-  const dir = getDreamstateDir(workspaceRoot);
+export function ensureDelegateDir(workspaceRoot: string): string {
+  const dir = getDelegateDir(workspaceRoot);
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }
@@ -41,19 +41,19 @@ export function getDefaultConfig(): Config {
   return {
     daemon: {
       provider: 'claude',  // Default provider (claude, opencode, codex, auto)
-      audit_timeout_minutes: 5,
+      plan_timeout_minutes: 5,
       token_budget_per_hour: 10000,
       model: 'haiku',
-      auto_audit: {
+      auto_plan: {
         enabled: false,  // Disabled by default - user must opt-in
         model: 'haiku',
-        max_iterations: 10,  // Throttle: max iterations per audit session
+        max_iterations: 10,  // Throttle: max iterations per plan session
         prompt: undefined
       }
     },
     watch: {
       patterns: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
-      ignore: ['node_modules', 'dist', '.git', '.dreamstate']
+      ignore: ['node_modules', 'dist', '.git', '.delegate']
     },
     docs: {
       enabled: true,
@@ -64,7 +64,7 @@ export function getDefaultConfig(): Config {
 }
 
 export function loadConfig(workspaceRoot: string): Config {
-  const configPath = join(getDreamstateDir(workspaceRoot), CONFIG_FILE);
+  const configPath = join(getDelegateDir(workspaceRoot), CONFIG_FILE);
   const defaults = getDefaultConfig();
 
   if (existsSync(configPath)) {
@@ -74,9 +74,9 @@ export function loadConfig(workspaceRoot: string): Config {
         daemon: {
           ...defaults.daemon,
           ...userConfig.daemon,
-          auto_audit: {
-            ...defaults.daemon.auto_audit,
-            ...(userConfig.daemon?.auto_audit || {})
+          auto_plan: {
+            ...defaults.daemon.auto_plan,
+            ...(userConfig.daemon?.auto_plan || {})
           }
         },
         watch: { ...defaults.watch, ...userConfig.watch },
@@ -113,8 +113,8 @@ export function generateLoopFolderName(description: string): string {
  * Create a new loop folder with initial structure
  */
 export function createLoopFolder(workspaceRoot: string, description: string): string {
-  const dsDir = ensureDreamstateDir(workspaceRoot);
-  const loopsDir = join(dsDir, LOOPS_DIR);
+  const dgDir = ensureDelegateDir(workspaceRoot);
+  const loopsDir = join(dgDir, LOOPS_DIR);
 
   if (!existsSync(loopsDir)) {
     mkdirSync(loopsDir, { recursive: true });
@@ -156,7 +156,7 @@ Updated: ${status.updated}
  * Ensure docs directory exists
  */
 export function ensureDocsDir(workspaceRoot: string): string {
-  const docsDir = join(getDreamstateDir(workspaceRoot), DOCS_DIR);
+  const docsDir = join(getDelegateDir(workspaceRoot), DOCS_DIR);
   if (!existsSync(docsDir)) {
     mkdirSync(docsDir, { recursive: true });
   }
@@ -167,8 +167,8 @@ export function ensureDocsDir(workspaceRoot: string): string {
  * Create a new loop plan folder with initial structure
  */
 export function createLoopPlanFolder(workspaceRoot: string, description: string): string {
-  const dsDir = ensureDreamstateDir(workspaceRoot);
-  const plansDir = join(dsDir, LOOP_PLANS_DIR);
+  const dgDir = ensureDelegateDir(workspaceRoot);
+  const plansDir = join(dgDir, LOOP_PLANS_DIR);
 
   if (!existsSync(plansDir)) {
     mkdirSync(plansDir, { recursive: true });
@@ -185,7 +185,7 @@ export function createLoopPlanFolder(workspaceRoot: string, description: string)
  * Get templates directory path
  */
 export function getTemplatesDir(workspaceRoot: string): string {
-  return join(getDreamstateDir(workspaceRoot), TEMPLATES_DIR);
+  return join(getDelegateDir(workspaceRoot), TEMPLATES_DIR);
 }
 
 /**

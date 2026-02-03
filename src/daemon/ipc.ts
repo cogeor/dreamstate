@@ -1,8 +1,8 @@
 import { existsSync, readFileSync, writeFileSync, unlinkSync, readdirSync } from 'fs';
 import { join } from 'path';
 import {
-  getDreamstateDir,
-  ensureDreamstateDir,
+  getDelegateDir,
+  ensureDelegateDir,
   STATUS_FILE,
   PID_FILE,
   TASKS_DIR,
@@ -16,7 +16,7 @@ export class IPC {
 
   constructor(workspaceRoot: string) {
     this.workspaceRoot = workspaceRoot;
-    this.dir = ensureDreamstateDir(workspaceRoot);
+    this.dir = ensureDelegateDir(workspaceRoot);
   }
 
   // Status management

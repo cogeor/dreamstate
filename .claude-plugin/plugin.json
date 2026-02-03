@@ -1,5 +1,5 @@
 {
-  "name": "dreamstate",
+  "name": "delegate",
   "version": "0.1.0",
   "description": "Spec-driven development with background daemon for Claude Code",
   "author": {

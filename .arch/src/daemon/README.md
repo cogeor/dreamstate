@@ -8,8 +8,8 @@ Background daemon that watches files, detects idle state, manages token budgets,
 
 - `Daemon` - Main daemon class with start/stop lifecycle
 - `IPC` - File-based inter-process communication
-- `FileWatcher` - Watches files for changes and @dreamstate directives
-- `AuditDetector` - Tracks activity and triggers audit callbacks
+- `FileWatcher` - Watches files for changes and @delegate directives
+- `PlanDetector` - Tracks activity and triggers plan callbacks
 - `TokenBudgetTracker` - Manages hourly token spending limits
 - `runClaude` - Spawns claude CLI with prompts
 - `runClaudeAgent` - Runs claude with a specific agent name
@@ -25,19 +25,12 @@ Background daemon that watches files, detects idle state, manages token budgets,
           +-------------------+-------------------+
           |           |           |               |
     +-----+----+ +-----+-----+ +----+-----+ +------+------+
-    |FileWatcher| |AuditDetector| |TokenBudget| |    IPC     |
-    |(chokidar) | |(activity)   | |(limits)   | |(file-based)|
-    +-----+-----+ +------+------+ +-----+-----+ +------+-----+
+    |FileWatcher| |PlanDetector| |TokenBudget| |    IPC     |
+    |(chokidar) | |(activity)  | |(limits)   | |(file-based)|
+    +-----+-----+ +------+-----+ +-----+-----+ +------+-----+
           |              |              |              |
           v              v              v              v
-    [file changes] [audit events] [budget checks] [.dreamstate/]
-          |             |              |              |
-          +-------------+------+-------+--------------+
-                               |
-                        +------+------+
-                        | runClaude() |
-                        | (CLI spawn) |
-                        +-------------+
+    [file changes] [plan events]  [budget checks] [.delegate/]
 ```
 
 ## Key Files
@@ -46,8 +39,8 @@ Background daemon that watches files, detects idle state, manages token budgets,
 |------|---------|
 | index.ts | Daemon entry point, orchestrates all components |
 | ipc.ts | File-based IPC: status, tasks, results |
-| file-watcher.ts | Watches files, scans for @dreamstate directives |
-| audit-detector.ts | Tracks activity, triggers audit callbacks |
+| file-watcher.ts | Watches files, scans for @delegate directives |
+| plan-detector.ts | Tracks activity, triggers plan callbacks |
 | token-budget.ts | Hourly token budget tracking and enforcement |
 | claude-cli.ts | Spawns claude CLI processes |
 
@@ -59,41 +52,6 @@ Background daemon that watches files, detects idle state, manages token budgets,
 - `../shared/types` - Type definitions
 
 **Outputs:**
-- `.dreamstate/daemon.status` - Current daemon state
-- `.dreamstate/daemon.pid` - Process ID file
-- `.dreamstate/results/*.json` - Task results
-- Console logs for debugging
-
-## Call Graph
-
-```
-Daemon.start()
-  +-> IPC.writePid()
-  +-> FileWatcher.start()
-  |     +-> chokidar.watch()
-  |     +-> scanForDirectives() -> onFileDirective callback
-  |     +-> onFileChange callback
-  +-> AuditDetector.start()
-  |     +-> setInterval(checkIdle)
-  |     +-> onAuditStart/onAuditEnd callbacks
-  +-> updateStatus()
-  |     +-> TokenBudgetTracker.getStatus()
-  |     +-> IPC.writeStatus()
-  +-> pollTasks()
-        +-> IPC.getPendingTasks()
-        +-> processTask()
-        |     +-> handles 'ping' type
-        +-> IPC.writeResult()
-        +-> IPC.consumeTask()
-
-Daemon.processFileDirective()
-  +-> TokenBudgetTracker.canSpend()
-  +-> AuditDetector.recordActivity()
-  +-> runClaude()
-  +-> TokenBudgetTracker.recordUsage()
-
-Daemon.stop()
-  +-> FileWatcher.stop()
-  +-> AuditDetector.stop()
-  +-> IPC.clearPid()
-```
+- `.delegate/daemon.status` - Current daemon state
+- `.delegate/daemon.pid` - Process ID file
+- `.delegate/results/*.json` - Task results

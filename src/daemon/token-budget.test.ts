@@ -37,14 +37,14 @@ function assertFalse(condition: boolean, message: string): void {
 
 // Test workspace setup
 const TEST_WORKSPACE = join(process.cwd(), '.test-workspace');
-const DREAMSTATE_DIR = join(TEST_WORKSPACE, '.dreamstate');
-const BUDGET_FILE = join(DREAMSTATE_DIR, 'token-budget.json');
+const DELEGATE_DIR = join(TEST_WORKSPACE, '.delegate');
+const BUDGET_FILE = join(DELEGATE_DIR, 'token-budget.json');
 
 function setupTestWorkspace(): void {
   if (existsSync(TEST_WORKSPACE)) {
     rmSync(TEST_WORKSPACE, { recursive: true });
   }
-  mkdirSync(DREAMSTATE_DIR, { recursive: true });
+  mkdirSync(DELEGATE_DIR, { recursive: true });
 }
 
 function cleanupTestWorkspace(): void {

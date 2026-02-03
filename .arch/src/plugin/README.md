@@ -1,24 +1,23 @@
-# Module: src/plugin
+# Module: Plugin
 
 ## Overview
 
-Claude Code plugin providing slash commands and specialized agents for the dreamstate workflow. Commands interact with the daemon via IPC; agents handle specific phases of the plan/implement/test loop.
+Claude Code plugin providing slash commands and specialized agents for the delegate workflow. Commands interact with the daemon via IPC; agents handle specific phases of the plan/implement/test loop.
 
 ## Public API
 
-**Commands (ds namespace):**
-- `/ds:ping` - Test daemon connectivity
-- `/ds:status` - Show daemon and audit mode status
-- `/ds:audit [model] [prompt]` - Enter continuous dream refinement mode
-- `/interrupt (Ctrl+C)` - Stop audit mode
-- `/ds:loop [args]` - Execute plan/implement/test loops
+**Commands (dg namespace):**
+- `/dg:status` - Show daemon and plan mode status
+- `/dg:plan [model] [theme]` - Enter continuous plan mode
+- `/dg:do [args]` - Execute plan/implement/test loops
+- `/dg:init` - Initialize delegate in a project
 
 **Agents:**
-- `ds-coordinator` - Orchestrates the 3-phase loop
-- `ds-planner` - Creates implementation plans from drafts
-- `ds-executor` - Implements tasks from plans
-- `ds-tester` - Verifies implementation against plan
-- `ds-audit-planner` - Refines plans during audit mode
+- `dg-planner` - Creates implementation plans from drafts
+- `dg-executor` - Implements tasks from plans
+- `dg-tester` - Verifies implementation against plan
+- `dg-plan-planner` - Explores and plans during plan mode
+- `dg-doc-generator` - Generates documentation during plan mode
 
 ## Architecture
 
@@ -26,74 +25,45 @@ Claude Code plugin providing slash commands and specialized agents for the dream
                           User
                             |
                     +-------v--------+
-                    |  /ds:* commands |
+                    |  /dg:* commands |
                     +-------+--------+
                             |
          +------------------+------------------+
          |          |           |              |
     +----v----+ +---v---+ +----v----+  +------v------+
-    |  ping   | |status | |  loop   |  |dream / wake |
-    +---------+ +-------+ +----+----+  +------+------+
-         |          |          |              |
-         |          |          v              v
-         |          |   +------+------+  +------+------+
-         |          |   | coordinator |  |dream-planner|
-         v          v   +------+------+  +-----------+
-    [.dreamstate/]      |      |
-         ^              v      v
-         |         +----+----+ +-----+-----+
-         +-------->| planner | | executor  |
-                   +---------+ +-----+-----+
-                                     |
-                                     v
-                               +-----+-----+
-                               |  tester   |
-                               +-----------+
+    | status  | | plan  | |   do    |  |    init     |
+    +---------+ +-------+ +----+----+  +-------------+
+         |          |          |
+         |          |          v
+         |          |   +------+------+
+         |          |   |  planner    |
+         v          v   +------+------+
+    [.delegate/]               |
+         ^              +------+------+
+         |              |  executor   |
+         +------------->+------+------+
+                               |
+                        +------+------+
+                        |   tester    |
+                        +-------------+
 ```
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| commands/ds/ping.md | Tests daemon connectivity via IPC |
-| commands/ds/status.md | Displays daemon and dream status |
-| commands/ds/dream.md | Starts continuous audit mode |
-| commands/ds/wake.md | Stops audit mode |
-| commands/ds/loop.md | Executes loops with dependency resolution |
-| agents/ds-coordinator.md | Orchestrates plan/implement/test phases |
-| agents/ds-planner.md | Transforms drafts into detailed plans |
-| agents/ds-executor.md | Implements tasks from plans |
-| agents/ds-tester.md | Verifies implementation, gates commits |
-| agents/ds-audit-planner.md | Explores templates, refines missions |
+| commands/dg/status.md | Displays daemon and plan status |
+| commands/dg/plan.md | Starts continuous plan mode |
+| commands/dg/do.md | Executes loops with dependency resolution |
+| commands/dg/init.md | Initializes delegate in a project |
+| agents/dg-planner.md | Transforms drafts into detailed plans |
+| agents/dg-executor.md | Implements tasks from plans |
+| agents/dg-tester.md | Verifies implementation, gates commits |
+| agents/dg-plan-planner.md | Explores codebase during plan mode |
+| agents/dg-doc-generator.md | Generates documentation |
 
 ## Dependencies
 
-**Inputs:** `.dreamstate/` (tasks, audit.state, daemon.status, templates), `../shared/types`
+**Inputs:** `.delegate/` (tasks, plan.state, daemon.status, templates), `../shared/types`
 
-**Outputs:** `.dreamstate/results/`, `.dreamstate/loops/*/`, `.dreamstate/loop_plans/*/`, git commits
-
-## Call Graph
-
-```
-/ds:loop
-  +-> findLoopPlan() or findDraft()
-  +-> resolveOrder() - dependency resolution
-  +-> buildParallelGroups()
-  +-> Task(ds-coordinator)
-        +-> read DRAFT.md
-        +-> Task(ds-planner)
-        |     +-> explore codebase (Glob/Grep)
-        |     +-> write PLAN.md
-        +-> for each task: Task(ds-executor) -> IMPLEMENTATION.md
-        +-> Task(ds-tester)
-        |     +-> compare PLAN vs IMPLEMENTATION
-        |     +-> run tests (Bash)
-        |     +-> write TEST.md
-        +-> if tests pass:
-              +-> git add/commit
-              +-> write COMMIT.md
-
-/ds:audit
-  +-> create loop_plan folder, write audit.state
-  +-> loop: Task(ds-audit-planner) -> ITERATIONS.md -> check active
-```
+**Outputs:** `.delegate/results/`, `.delegate/loops/*/`, `.delegate/loop_plans/*/`, git commits

@@ -1,13 +1,13 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { getDreamstateDir, ensureDreamstateDir } from './config.js';
+import { getDelegateDir, ensureDelegateDir } from './config.js';
 import type { ProjectState } from './types.js';
 
 const STATE_FILE = 'STATE.md';
 const MAX_ACTIVITIES = 10;
 
 export function getStatePath(workspaceRoot: string): string {
-  return join(getDreamstateDir(workspaceRoot), STATE_FILE);
+  return join(getDelegateDir(workspaceRoot), STATE_FILE);
 }
 
 export function loadState(workspaceRoot: string): ProjectState | null {
@@ -23,7 +23,7 @@ export function loadState(workspaceRoot: string): ProjectState | null {
 }
 
 export function saveState(workspaceRoot: string, state: ProjectState): void {
-  ensureDreamstateDir(workspaceRoot);
+  ensureDelegateDir(workspaceRoot);
   const path = getStatePath(workspaceRoot);
   const content = formatStateMd(state);
   writeFileSync(path, content);

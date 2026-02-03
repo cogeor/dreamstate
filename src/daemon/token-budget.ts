@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { getDreamstateDir } from '../shared/config.js';
+import { getDelegateDir } from '../shared/config.js';
 import type { TokenBudget, TokenUsage } from '../shared/types.js';
 
 const BUDGET_FILE = 'token-budget.json';
@@ -27,7 +27,7 @@ export class TokenBudgetTracker {
   constructor(workspaceRoot: string, hourlyLimit: number) {
     this.workspaceRoot = workspaceRoot;
     this.hourlyLimit = hourlyLimit;
-    this.budgetPath = join(getDreamstateDir(workspaceRoot), BUDGET_FILE);
+    this.budgetPath = join(getDelegateDir(workspaceRoot), BUDGET_FILE);
     this.budget = this.loadBudget();
   }
 

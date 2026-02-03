@@ -7,8 +7,8 @@ Shared utilities, types, and configuration management used by both the daemon an
 ## Public API
 
 **config.ts:**
-- `getDreamstateDir(workspaceRoot)` - Get .dreamstate path
-- `ensureDreamstateDir(workspaceRoot)` - Create directories
+- `getDelegateDir(workspaceRoot)` - Get .delegate path
+- `ensureDelegateDir(workspaceRoot)` - Create directories
 - `loadConfig(workspaceRoot)` - Load merged config
 - `getDefaultConfig()` - Default configuration object
 - `generateLoopFolderName(description)` - Create timestamped folder name
@@ -31,7 +31,7 @@ Shared utilities, types, and configuration management used by both the daemon an
 
 ```
 +-------------------+     +-------------------+
-|      daemon/      |     |      plugin/      |
+|      daemon/      |     |      hooks/       |
 +--------+----------+     +---------+---------+
          |                          |
          +------------+-------------+
@@ -45,7 +45,7 @@ Shared utilities, types, and configuration management used by both the daemon an
               +---------------+
                       |
                       v
-              [.dreamstate/]
+              [.delegate/]
 ```
 
 ## Key Files
@@ -61,38 +61,9 @@ Shared utilities, types, and configuration management used by both the daemon an
 **Inputs:**
 - Node.js `fs` module
 - Node.js `path` module
-- `.dreamstate/config.json` - User configuration
+- `.delegate/config.json` - User configuration
 
 **Outputs:**
-- `.dreamstate/` directory structure
-- `.dreamstate/STATE.md` - Project state
-- `.dreamstate/loops/*/STATUS.md` - Loop status files
-
-## Call Graph
-
-```
-config.ts:
-  loadConfig()
-    +-> getDreamstateDir()
-    +-> getDefaultConfig()
-    +-> merge user config
-
-  createLoopFolder()
-    +-> ensureDreamstateDir()
-    +-> generateLoopFolderName()
-    +-> mkdirSync()
-    +-> writeFileSync(STATUS.md)
-
-  ensureDreamstateDir()
-    +-> mkdirSync(.dreamstate)
-    +-> mkdirSync(tasks)
-    +-> mkdirSync(results)
-
-state.ts:
-  addActivity()
-    +-> loadState() -> parseStateMd()
-    +-> createDefaultState() [if no state]
-    +-> saveState() -> formatStateMd() -> writeFileSync()
-
-types.ts: [No runtime - type definitions only]
-```
+- `.delegate/` directory structure
+- `.delegate/STATE.md` - Project state
+- `.delegate/loops/*/STATUS.md` - Loop status files

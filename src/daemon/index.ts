@@ -3,8 +3,8 @@ import { join } from 'path';
 import { IPC } from './ipc.js';
 import { FileWatcher } from './file-watcher.js';
 import { TokenBudgetTracker } from './token-budget.js';
-import { AuditDetector } from './audit-detector.js';
-import { loadConfig, ensureDreamstateDir, getDreamstateDir, DAEMON_REQUEST_FILE } from '../shared/config.js';
+import { PlanDetector } from './plan-detector.js';
+import { loadConfig, ensureDelegateDir, getDelegateDir, DAEMON_REQUEST_FILE } from '../shared/config.js';
 import type { DaemonStatus, Task, TaskResult, PingResult, FileTask, Config, DaemonRequest } from '../shared/types.js';
 import { getProvider, type LLMProvider } from './providers/index.js';
 
@@ -12,7 +12,7 @@ class Daemon {
   private ipc: IPC;
   private fileWatcher: FileWatcher;
   private tokenBudget: TokenBudgetTracker;
-  private auditDetector: AuditDetector;
+  private planDetector: PlanDetector;
   private provider: LLMProvider | null = null;
   private workspaceRoot: string;
   private config: Config;
@@ -26,7 +26,7 @@ class Daemon {
     this.workspaceRoot = workspaceRoot;
     this.startedAt = new Date();
 
-    ensureDreamstateDir(workspaceRoot);
+    ensureDelegateDir(workspaceRoot);
 
     this.ipc = new IPC(workspaceRoot);
     this.config = loadConfig(workspaceRoot);
@@ -34,11 +34,11 @@ class Daemon {
 
     this.tokenBudget = new TokenBudgetTracker(workspaceRoot, config.daemon.token_budget_per_hour);
 
-    this.auditDetector = new AuditDetector(workspaceRoot, {
-      auditTimeoutMinutes: config.daemon.audit_timeout_minutes,
+    this.planDetector = new PlanDetector(workspaceRoot, {
+      planTimeoutMinutes: config.daemon.plan_timeout_minutes,
       model: config.daemon.model,
-      onAuditStart: () => this.handleAuditStart(),
-      onAuditEnd: () => this.handleAuditEnd(),
+      onPlanStart: () => this.handlePlanStart(),
+      onPlanEnd: () => this.handlePlanEnd(),
     });
 
     this.fileWatcher = new FileWatcher(workspaceRoot, config, {
@@ -64,7 +64,7 @@ class Daemon {
     }
 
     // Record activity
-    this.auditDetector.recordActivity();
+    this.planDetector.recordActivity();
 
     // Build prompt with file context
     const prompt = `File: ${task.filePath}
@@ -96,38 +96,38 @@ Please complete this task. Be concise and focused on the specific instruction.`;
     }
   }
 
-  private handleAuditStart(): void {
-    // Check token budget before auto-starting audit tasks
+  private handlePlanStart(): void {
+    // Check token budget before auto-starting plan tasks
     if (this.tokenBudget.isOverBudget()) {
-      console.log('[Daemon] Idle detected but token budget exceeded, skipping auto-audit');
+      console.log('[Daemon] Idle detected but token budget exceeded, skipping auto-plan');
       return;
     }
 
-    // Check if auto-audit is enabled
-    const autoAudit = this.config.daemon.auto_audit;
-    if (!autoAudit.enabled) {
-      console.log('[Daemon] Idle detected (auto-audit disabled, use /ds:audit manually)');
+    // Check if auto-plan is enabled
+    const autoPlan = this.config.daemon.auto_plan;
+    if (!autoPlan.enabled) {
+      console.log('[Daemon] Idle detected (auto-plan disabled, use /dg:plan manually)');
       return;
     }
 
     // Write daemon request for the prompt-submit hook to pick up
     const request: DaemonRequest = {
-      id: `auto-audit-${Date.now()}`,
-      action: 'start-audit',
-      model: autoAudit.model,
-      max_iterations: autoAudit.max_iterations,
-      prompt: autoAudit.prompt,
+      id: `auto-plan-${Date.now()}`,
+      action: 'start-plan',
+      model: autoPlan.model,
+      max_iterations: autoPlan.max_iterations,
+      prompt: autoPlan.prompt,
       createdAt: new Date().toISOString()
     };
 
-    const requestPath = join(getDreamstateDir(this.workspaceRoot), DAEMON_REQUEST_FILE);
+    const requestPath = join(getDelegateDir(this.workspaceRoot), DAEMON_REQUEST_FILE);
     writeFileSync(requestPath, JSON.stringify(request, null, 2));
 
-    console.log(`[Daemon] Auto-audit triggered - wrote request (model: ${autoAudit.model}, max: ${autoAudit.max_iterations})`);
+    console.log(`[Daemon] Auto-plan triggered - wrote request (model: ${autoPlan.model}, max: ${autoPlan.max_iterations})`);
   }
 
-  private handleAuditEnd(): void {
-    console.log('[Daemon] Activity resumed, audit tasks paused');
+  private handlePlanEnd(): void {
+    console.log('[Daemon] Activity resumed, plan tasks paused');
   }
 
   private queueTask(task: Task): void {
@@ -186,7 +186,7 @@ Please complete this task. Be concise and focused on the specific instruction.`;
     const tasks = this.ipc.getPendingTasks();
     for (const task of tasks) {
       // Record activity when processing tasks
-      this.auditDetector.recordActivity();
+      this.planDetector.recordActivity();
 
       const result = this.processTask(task);
       this.ipc.writeResult(result);
@@ -211,7 +211,7 @@ Please complete this task. Be concise and focused on the specific instruction.`;
     this.fileWatcher.start();
 
     // Start idle detector
-    this.auditDetector.start();
+    this.planDetector.start();
 
     // Initial status
     this.updateStatus();
@@ -230,16 +230,16 @@ Please complete this task. Be concise and focused on the specific instruction.`;
 
     console.log('');
     console.log('╔══════════════════════════════════════════╗');
-    console.log('║         DREAMSTATE DAEMON                ║');
+    console.log('║         DELEGATE DAEMON                   ║');
     console.log('╚══════════════════════════════════════════╝');
     console.log('');
     console.log(`[Daemon] Started (PID: ${process.pid})`);
     console.log(`[Daemon] Provider: ${this.provider.name}`);
     console.log(`[Daemon] Workspace: ${this.workspaceRoot}`);
-    console.log(`[Daemon] IPC directory: ${this.workspaceRoot}/.dreamstate`);
+    console.log(`[Daemon] IPC directory: ${this.workspaceRoot}/.delegate`);
     console.log('');
     console.log('[Daemon] Ready. Waiting for tasks...');
-    console.log('[Daemon] Test with: /ds:ping in Claude Code');
+    console.log('[Daemon] Test with: /dg:status in Claude Code');
     console.log('');
 
     // Handle shutdown
@@ -267,7 +267,7 @@ Please complete this task. Be concise and focused on the specific instruction.`;
     }
 
     this.fileWatcher.stop();
-    this.auditDetector.stop();
+    this.planDetector.stop();
     this.ipc.clearPid();
 
     console.log('[Daemon] Stopped');
@@ -275,8 +275,8 @@ Please complete this task. Be concise and focused on the specific instruction.`;
 }
 
 // Entry point
-// DREAMSTATE_WORKSPACE is set by the SessionStart hook
+// DELEGATE_WORKSPACE is set by the SessionStart hook
 // Falls back to cwd for manual invocation
-const workspaceRoot = process.env.DREAMSTATE_WORKSPACE || process.cwd();
+const workspaceRoot = process.env.DELEGATE_WORKSPACE || process.cwd();
 const daemon = new Daemon(workspaceRoot);
 daemon.start();

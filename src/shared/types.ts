@@ -41,14 +41,14 @@ export interface FileChangePayload {
 export interface Config {
   daemon: {
     provider: ProviderName;    // LLM provider (claude, opencode, codex, auto)
-    audit_timeout_minutes: number;
+    plan_timeout_minutes: number;
     token_budget_per_hour: number;
     model: string;
-    auto_audit: {
-      enabled: boolean;        // Whether to request audit mode when user is idle
-      model: 'haiku' | 'sonnet' | 'opus';  // Model to use for auto-audit
-      max_iterations: number;  // Max iterations per audit session (throttle)
-      prompt?: string;         // Optional focus prompt for audit sessions
+    auto_plan: {
+      enabled: boolean;        // Whether to request plan mode when user is idle
+      model: 'haiku' | 'sonnet' | 'opus';  // Model to use for auto-plan
+      max_iterations: number;  // Max iterations per plan session (throttle)
+      prompt?: string;         // Optional focus prompt for plan sessions
     };
   };
   watch: {
@@ -64,7 +64,7 @@ export interface Config {
 
 export interface DaemonRequest {
   id: string;
-  action: 'start-audit' | 'stop-audit';
+  action: 'start-plan' | 'stop-plan';
   model?: string;
   max_iterations?: number;
   prompt?: string;
@@ -111,7 +111,7 @@ export interface LoopPlan {
   executionOrder: string[][]; // Groups of loop IDs that can run in parallel
 }
 
-export interface AuditState {
+export interface PlanState {
   active: boolean;
   startedAt: string | null;
   stoppedAt?: string | null;

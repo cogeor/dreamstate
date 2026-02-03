@@ -4,8 +4,8 @@ node_modules/
 # Build output
 dist/
 
-# Dreamstate runtime files (daemon state, IPC, loops, docs)
-.dreamstate/
+# Delegate runtime files (daemon state, IPC, loops, docs)
+.delegate/
 
 # IDE
 .idea/
@@ -25,3 +25,5 @@ draft_plan.txt
 plan_draft.md
 
 templates/
+
+.delegate/

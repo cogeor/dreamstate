@@ -5,7 +5,7 @@ Every implementation task is a loop. This is mandatory, not optional.
 ## Quick Reference
 
 ```bash
-1. mkdir .dreamstate/loops/{YYYYMMDD-HHMMSS}-{slug}
+1. mkdir .delegate/loops/{YYYYMMDD-HHMMSS}-{slug}
 2. Create DRAFT.md, STATUS.md
 3. Implement
 4. npm run build
@@ -17,7 +17,7 @@ Every implementation task is a loop. This is mandatory, not optional.
 
 ### 1. Before Implementation
 
-Create loop folder: `.dreamstate/loops/{timestamp}-{slug}/`
+Create loop folder: `.delegate/loops/{timestamp}-{slug}/`
 
 Create `DRAFT.md` with task description.
 
@@ -47,7 +47,7 @@ Updated: {timestamp}
 3. Commit (do NOT batch multiple loops):
    ```bash
    git add <changed-files>
-   # Do NOT add .dreamstate/
+   # Do NOT add .delegate/
    git commit -m "{type}({scope}): {description}
 
    Implements: {loop-folder-name}"
@@ -76,7 +76,7 @@ Implements: 20260201-193500-token-budgeting
 
 - Implement multiple features without committing between them
 - Skip creating the loop folder
-- Commit `.dreamstate/` artifacts with code changes
+- Commit `.delegate/` artifacts with code changes
 - Forget to run `npm run build` before committing
 
 ## Why Loops?
@@ -89,11 +89,11 @@ Loops make intent explicit, progress visible, and rollback safe. Each loop is ti
 | `STATUS.md` | Progress tracking | Before starting |
 | `IMPLEMENTATION.md` | What was done | After implementation |
 | `COMMIT.md` | Commit reference | After committing |
-| `REFLECTION.md` | Value/quality assessment | Created during audit mode |
+| `REFLECTION.md` | Value/quality assessment | Created during plan mode |
 
 ## Loop Reflection
 
-After a loop completes, reflections are handled during audit mode iterations. The audit process reviews completed loops and generates REFLECTION.md files.
+After a loop completes, reflections are handled during plan mode iterations. The plan process reviews completed loops and generates REFLECTION.md files.
 
 Reflection assesses three dimensions (1-5 scale):
 
@@ -103,11 +103,4 @@ Reflection assesses three dimensions (1-5 scale):
 | **Quality** | Is the implementation clean and maintainable? |
 | **Coverage** | Are critical paths tested? |
 
-Check reflection status with `/ds:status`:
-```
-Loops:
-  Completed:  14
-  In Progress: 2
-```
-
-Reflections catch silent failures and improve future loops.
+Check reflection status with `/dg:status`.

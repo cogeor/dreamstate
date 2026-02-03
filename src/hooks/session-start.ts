@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * SessionStart hook for Claude Code.
- * Starts the dreamstate daemon if not already running.
+ * Starts the delegate daemon if not already running.
  * Must be fast - detaches daemon and exits immediately.
  */
 
@@ -18,8 +18,8 @@ const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT || join(__dirname, '..', '..')
 
 // Get workspace from CWD (Claude Code runs hooks in workspace)
 const workspace = process.cwd();
-const dreamstateDir = join(workspace, '.dreamstate');
-const pidFile = join(dreamstateDir, 'daemon.pid');
+const delegateDir = join(workspace, '.delegate');
+const pidFile = join(delegateDir, 'daemon.pid');
 
 function isProcessRunning(pid: number): boolean {
   try {
@@ -37,14 +37,14 @@ function ensureDir(dir: string): void {
 }
 
 function main(): void {
-  ensureDir(dreamstateDir);
+  ensureDir(delegateDir);
 
   // Check if daemon already running
   if (existsSync(pidFile)) {
     try {
       const pid = parseInt(readFileSync(pidFile, 'utf-8').trim(), 10);
       if (!isNaN(pid) && isProcessRunning(pid)) {
-        console.log(`[dreamstate] Daemon running (PID: ${pid})`);
+        console.log(`[delegate] Daemon running (PID: ${pid})`);
         return;
       }
       // PID file exists but process is dead - stale file
@@ -57,8 +57,8 @@ function main(): void {
   const daemonScript = join(pluginRoot, 'dist', 'daemon', 'index.js');
 
   if (!existsSync(daemonScript)) {
-    console.error(`[dreamstate] Daemon script not found: ${daemonScript}`);
-    console.error(`[dreamstate] Run 'npm run build' in the dreamstate directory`);
+    console.error(`[delegate] Daemon script not found: ${daemonScript}`);
+    console.error(`[delegate] Run 'npm run build' in the delegate directory`);
     return;
   }
 
@@ -67,7 +67,7 @@ function main(): void {
   if (isWindows) {
     // On Windows, use a VBS script to launch node truly hidden
     // This avoids the terminal window that appears with detached + shell
-    const vbsPath = join(dreamstateDir, 'launch-daemon.vbs');
+    const vbsPath = join(delegateDir, 'launch-daemon.vbs');
     const vbsContent = `
 Set WshShell = CreateObject("WScript.Shell")
 WshShell.Run "node ""${daemonScript.replace(/\\/g, '\\\\')}""", 0, False
@@ -80,7 +80,7 @@ WshShell.Run "node ""${daemonScript.replace(/\\/g, '\\\\')}""", 0, False
       cwd: pluginRoot,
       detached: true,
       stdio: 'ignore',
-      env: { ...process.env, DREAMSTATE_WORKSPACE: workspace },
+      env: { ...process.env, DELEGATE_WORKSPACE: workspace },
     });
     vbs.unref();
 
@@ -88,9 +88,9 @@ WshShell.Run "node ""${daemonScript.replace(/\\/g, '\\\\')}""", 0, False
     setTimeout(() => {
       if (existsSync(pidFile)) {
         const pid = readFileSync(pidFile, 'utf-8').trim();
-        console.log(`[dreamstate] Daemon started (PID: ${pid})`);
+        console.log(`[delegate] Daemon started (PID: ${pid})`);
       } else {
-        console.log(`[dreamstate] Daemon started`);
+        console.log(`[delegate] Daemon started`);
       }
     }, 500);
   } else {
@@ -99,11 +99,11 @@ WshShell.Run "node ""${daemonScript.replace(/\\/g, '\\\\')}""", 0, False
       cwd: pluginRoot,
       detached: true,
       stdio: 'ignore',
-      env: { ...process.env, DREAMSTATE_WORKSPACE: workspace },
+      env: { ...process.env, DELEGATE_WORKSPACE: workspace },
     });
 
     daemon.unref();
-    console.log(`[dreamstate] Daemon started (PID: ${daemon.pid})`);
+    console.log(`[delegate] Daemon started (PID: ${daemon.pid})`);
   }
 }
 

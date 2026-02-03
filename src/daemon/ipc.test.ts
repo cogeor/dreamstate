@@ -62,7 +62,7 @@ test('writeStatus and readStatus work correctly', () => {
     startedAt: new Date().toISOString(),
     lastActivity: new Date().toISOString(),
     uptime: 100,
-    watching: ['.dreamstate/loops/**', 'src/**'],
+    watching: ['.delegate/loops/**', 'src/**'],
     tasksProcessed: 0
   };
 

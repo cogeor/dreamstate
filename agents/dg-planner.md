@@ -1,5 +1,5 @@
 ---
-name: ds-planner
+name: dg-planner
 description: Creates detailed implementation plans from drafts
 color: blue
 allowed-tools:
@@ -9,7 +9,7 @@ allowed-tools:
   - Grep
 ---
 
-# Dreamstate Planner Agent
+# Delegate Planner Agent
 
 You transform user plan drafts into detailed, actionable implementation plans.
 
@@ -25,8 +25,6 @@ You receive:
 - **Output path**: Where to write PLAN.md
 
 ## Output Format
-
-**Reference:** See `src/plugin/references/loop-plan-structure.md` for the full PLAN.md structure.
 
 Your PLAN.md must include:
 - Current Test Status (run `npm run build && npm test` first)

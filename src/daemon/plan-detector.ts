@@ -1,26 +1,26 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { getDreamstateDir } from '../shared/config.js';
-import type { AuditState } from '../shared/types.js';
+import { getDelegateDir } from '../shared/config.js';
+import type { PlanState } from '../shared/types.js';
 
-const AUDIT_STATE_FILE = 'audit.state';
+const PLAN_STATE_FILE = 'plan.state';
 const ACTIVITY_FILE = 'last-activity.txt';
 
-export interface AuditDetectorConfig {
-  auditTimeoutMinutes: number;
+export interface PlanDetectorConfig {
+  planTimeoutMinutes: number;
   model: string;
-  onAuditStart?: () => void;
-  onAuditEnd?: () => void;
+  onPlanStart?: () => void;
+  onPlanEnd?: () => void;
 }
 
-export class AuditDetector {
+export class PlanDetector {
   private workspaceRoot: string;
-  private config: AuditDetectorConfig;
+  private config: PlanDetectorConfig;
   private lastActivityTime: number;
-  private isAuditing: boolean = false;
+  private isPlanning: boolean = false;
   private checkIntervalId: NodeJS.Timeout | null = null;
 
-  constructor(workspaceRoot: string, config: AuditDetectorConfig) {
+  constructor(workspaceRoot: string, config: PlanDetectorConfig) {
     this.workspaceRoot = workspaceRoot;
     this.config = config;
     this.lastActivityTime = Date.now();
@@ -28,11 +28,11 @@ export class AuditDetector {
   }
 
   private getActivityPath(): string {
-    return join(getDreamstateDir(this.workspaceRoot), ACTIVITY_FILE);
+    return join(getDelegateDir(this.workspaceRoot), ACTIVITY_FILE);
   }
 
-  private getAuditStatePath(): string {
-    return join(getDreamstateDir(this.workspaceRoot), AUDIT_STATE_FILE);
+  private getPlanStatePath(): string {
+    return join(getDelegateDir(this.workspaceRoot), PLAN_STATE_FILE);
   }
 
   private loadLastActivity(): void {
@@ -56,11 +56,11 @@ export class AuditDetector {
     this.lastActivityTime = Date.now();
     writeFileSync(this.getActivityPath(), String(this.lastActivityTime));
 
-    // If we were auditing, transition out
-    if (this.isAuditing) {
-      this.isAuditing = false;
-      console.log('[AuditDetector] Activity detected, exiting audit state');
-      this.config.onAuditEnd?.();
+    // If we were planning, transition out
+    if (this.isPlanning) {
+      this.isPlanning = false;
+      console.log('[PlanDetector] Activity detected, exiting plan state');
+      this.config.onPlanEnd?.();
     }
   }
 
@@ -68,37 +68,37 @@ export class AuditDetector {
    * Check if system is idle (no activity for N minutes)
    */
   checkIdle(): boolean {
-    const idleMs = this.config.auditTimeoutMinutes * 60 * 1000;
+    const idleMs = this.config.planTimeoutMinutes * 60 * 1000;
     const timeSinceActivity = Date.now() - this.lastActivityTime;
     return timeSinceActivity >= idleMs;
   }
 
   /**
-   * Get current audit state from file
+   * Get current plan state from file
    */
-  getAuditState(): AuditState | null {
-    const path = this.getAuditStatePath();
+  getPlanState(): PlanState | null {
+    const path = this.getPlanStatePath();
     if (!existsSync(path)) return null;
     try {
-      return JSON.parse(readFileSync(path, 'utf-8')) as AuditState;
+      return JSON.parse(readFileSync(path, 'utf-8')) as PlanState;
     } catch {
       return null;
     }
   }
 
   /**
-   * Check if audit mode is manually active (via /ds:audit)
+   * Check if plan mode is manually active (via /dg:plan)
    */
-  isManualAuditActive(): boolean {
-    const state = this.getAuditState();
+  isManualPlanActive(): boolean {
+    const state = this.getPlanState();
     return state?.active === true;
   }
 
   /**
-   * Get minutes until audit triggers (or 0 if already idle)
+   * Get minutes until plan triggers (or 0 if already idle)
    */
-  getMinutesUntilAudit(): number {
-    const idleMs = this.config.auditTimeoutMinutes * 60 * 1000;
+  getMinutesUntilPlan(): number {
+    const idleMs = this.config.planTimeoutMinutes * 60 * 1000;
     const timeSinceActivity = Date.now() - this.lastActivityTime;
     const remaining = idleMs - timeSinceActivity;
     return Math.max(0, Math.ceil(remaining / 60000));
@@ -118,14 +118,14 @@ export class AuditDetector {
   start(): void {
     // Check every 30 seconds
     this.checkIntervalId = setInterval(() => {
-      if (this.checkIdle() && !this.isAuditing && !this.isManualAuditActive()) {
-        this.isAuditing = true;
-        console.log(`[AuditDetector] System idle for ${this.config.auditTimeoutMinutes} minutes`);
-        this.config.onAuditStart?.();
+      if (this.checkIdle() && !this.isPlanning && !this.isManualPlanActive()) {
+        this.isPlanning = true;
+        console.log(`[PlanDetector] System idle for ${this.config.planTimeoutMinutes} minutes`);
+        this.config.onPlanStart?.();
       }
     }, 30000);
 
-    console.log(`[AuditDetector] Started (timeout: ${this.config.auditTimeoutMinutes} minutes)`);
+    console.log(`[PlanDetector] Started (timeout: ${this.config.planTimeoutMinutes} minutes)`);
   }
 
   /**
@@ -136,6 +136,6 @@ export class AuditDetector {
       clearInterval(this.checkIntervalId);
       this.checkIntervalId = null;
     }
-    console.log('[AuditDetector] Stopped');
+    console.log('[PlanDetector] Stopped');
   }
 }
