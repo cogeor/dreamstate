@@ -26,73 +26,34 @@ You are the ORCHESTRATOR. You coordinate agents and handle commits yourself.
 ## Modes
 
 ```
-/dg:work plan <prompt>          → Plan only. Output LOOPS.yaml. Stop.
-/dg:work <prompt>               → Plan + execute all loops.
-/dg:work <ref>                  → Execute from existing LOOPS.yaml.
+/dg:work plan <prompt>   → Plan only. Output LOOPS.yaml. Stop.
+/dg:work <prompt>         → Plan + execute all loops.
+/dg:work <ref>            → Execute from existing loop plan(s).
 ```
 
-### Detection
+**Detection:** First word `plan` → plan mode. Path/folder/`.md` file/loop ID (`03`, `03..05`, `--all`) → ref mode. Anything else → prompt mode.
 
-- First word is `plan` → **plan mode** (rest is the prompt)
-- Path to folder, path to `.md` file, or loop ID (`03`, `03..05`, `--all`) → **ref mode**
-- Anything else → **prompt mode**
+## Pipeline
 
-Ref mode handles both `LOOPS.yaml` folders and study session folders (containing `{NN}-*.md` drafts).
+### 1. Resolve input
 
----
+- **plan / prompt mode:** Create folder `.delegate/loop_plans/{YYYYMMDD-HHMMSS}-{slug}/`, analyze codebase, write DRAFT.md from prompt.
+- **ref mode:** Find target folder (from path, or most recent: `ls -td .delegate/loop_plans/*/ | head -1`).
+  - If folder has `LOOPS.yaml` → parse requested IDs (specific, range, or `--all` pending), resolve dependencies.
+  - If folder has `{NN}-*.md` drafts but no `LOOPS.yaml` → **study session conversion**: read each draft sorted by number, feed each to **dg-planner** (decomposition context) to produce entries, merge into a single `LOOPS.yaml` (re-number IDs sequentially, preserve dependencies).
 
-### Plan mode
+### 2. Decompose
 
-`/dg:work plan add auth and dark mode`
+If no `LOOPS.yaml` yet: spawn **dg-planner** (decomposition context) → produces `LOOPS.yaml`. See dg-planner agent for schema.
 
-1. Create plan folder: `.delegate/loop_plans/{YYYYMMDD-HHMMSS}-{slug}/`
-2. Analyze codebase, create DRAFT.md from prompt
-3. Spawn **dg-planner** → produces `LOOPS.yaml`
-4. Report loop manifest to user (count, names, dependencies)
-5. **Stop. Do not implement.**
+### 3. Gate
 
----
-
-### Prompt mode
-
-`/dg:work add auth and dark mode`
-
-1. Create plan folder: `.delegate/loop_plans/{YYYYMMDD-HHMMSS}-{slug}/`
-2. Analyze codebase, create DRAFT.md from prompt
-3. Spawn **dg-planner** → produces `LOOPS.yaml`
-4. Show loop manifest to user
-5. Execute all entries → **Execute Loop** for each, in dependency order
-
----
-
-### Ref mode
-
-`/dg:work .delegate/loop_plans/20260204-plan-session/`
-`/dg:work 03` or `/dg:work 03..05` or `/dg:work --all`
-
-1. Find the target folder (from path, or most recent plan: `ls -td .delegate/loop_plans/*/ | head -1`)
-2. Check if the folder contains `LOOPS.yaml`:
-   - **Yes** → parse requested IDs (specific, range, or `--all` pending), resolve dependencies, execute
-   - **No, but has `{NN}-*.md` drafts** → **study session conversion** (see below)
-3. Execute matching entries → **Execute Loop** for each, in dependency order
-
-#### Study session conversion
-
-When the target folder has draft files (`{NN}-*.md`) but no `LOOPS.yaml`, it's a study session output:
-
-1. List all `{NN}-*.md` files in the folder, sorted by number
-2. For each draft file:
-   a. Read the draft content
-   b. Feed it as a prompt to **dg-planner** (decomposition context) → produces `LOOPS.yaml`
-   c. Each draft may produce one or more LOOPS.yaml entries
-3. Merge all entries into a single `LOOPS.yaml` in the folder (re-number IDs sequentially, preserve dependencies)
-4. Execute all entries → **Execute Loop** for each, in dependency order
-
----
+- **plan mode** → report loop manifest (count, names, dependencies) to user. **Stop.**
+- **prompt / ref mode** → show manifest, then execute all matching entries in dependency order.
 
 ## Execute Loop
 
-For each LOOPS.yaml entry. One entry = one commit.
+One LOOPS.yaml entry = one commit.
 
 ```
 LOOPS.yaml entry
@@ -107,74 +68,12 @@ LOOPS.yaml entry
                                                 └────────┘
 ```
 
-### 1. Plan
-
-1. Create loop folder: `.delegate/loops/{YYYYMMDD-HHMMSS}-{slug}/`
-2. Write entry's `summary` as `DRAFT.md`, create `STATUS.md`
-3. Spawn **dg-planner**: input DRAFT.md → output PLAN.md
-
-### 2. Implement
-
-1. For each task in PLAN.md, spawn **dg-executor**
-2. Output: code changes + `IMPLEMENTATION.md`
-
-### 3. Test
-
-1. Spawn **dg-tester**: input PLAN.md + IMPLEMENTATION.md → output TEST.md
-2. `Ready for Commit: yes` → proceed to commit
-3. `Ready for Commit: no` → mark failed, report to user, stop this loop
-
-### 4. Commit
-
-1. `git add -A`
-2. `git commit -m "{type}({scope}): {message}"`
-3. Never push. Never add co-author lines.
-4. Report commit hash to user
-5. Continue to next loop if more entries remain
-
-### 5. Doc (non-blocking)
-
-1. Spawn **dg-doc-generator** with commit hash
-2. Agent runs `git diff HEAD~1 HEAD --name-only`, updates `.doc/` for changed files
-3. Failures here do NOT fail the loop
-
----
-
-## LOOPS.yaml
-
-Every plan produces a LOOPS.yaml. Even single-concern work is one entry.
-
-```yaml
-loops:
-  - id: "01"
-    slug: short-description
-    summary: |
-      What this loop accomplishes.
-      This becomes the DRAFT.md content for the loop.
-    depends_on: []
-    status: pending        # pending | in_progress | complete | failed
-  - id: "02"
-    slug: another-task
-    summary: |
-      Second loop description.
-    depends_on: ["01"]
-    status: pending
-```
-
----
+- **Plan:** Create loop folder `.delegate/loops/{YYYYMMDD-HHMMSS}-{slug}/`, write entry summary as DRAFT.md + STATUS.md, spawn **dg-planner** → PLAN.md.
+- **Implement:** For each task in PLAN.md, spawn **dg-executor** → code changes + IMPLEMENTATION.md.
+- **Test:** Spawn **dg-tester** → TEST.md. "Ready for Commit: yes" → proceed. "no" → mark failed, report, stop this loop.
+- **Commit:** `git add -A && git commit -m "{type}({scope}): {message}"`. Never push. Never add co-author lines. Report hash. Continue to next loop.
+- **Doc (non-blocking):** Spawn **dg-doc-generator** with commit hash → updates `.doc/`. Failures do not fail the loop.
 
 ## Output
 
-```
-Loop 01: {slug}
-━━━━━━━━━━━━━━━
-  ✓ Plan       → PLAN.md
-  ✓ Implement  → {N} tasks
-  ✓ Test       → PASS
-  ✓ Commit     → {hash} {message}
-  · Doc        → {N} files (or "skipped")
-
-Loop 02: {slug}
-━━━━━━━━━━━━━━━
-  ...
-```
+Report per loop: `Loop {id}: {slug} — Plan ok | {N} tasks | PASS | {hash} {message} | Doc {N} files`
