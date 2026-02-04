@@ -1,45 +1,55 @@
 # Delegate
 
-Autonomous coding infrastructure for Claude Code. Humans write plan drafts, agents write self-cleaning code.
+Spec-driven workflow orchestration for coding agents: it separates exploration (study) from implementation (do), then runs each loop through tests and commit hygiene.
 
 ## How It Works
 
-**Study Mode** (`/dg:study`) - Claude continuously explores your codebase, analyzes patterns, runs tests, and proposes improvements. Plans are read-only: they can create tests but cannot modify source code.
+**Study Mode** (`/dg:study`) - The coding agent continuously explores your codebase, analyzes patterns, runs tests, and proposes improvements. Plans are read-only: they can create tests but cannot modify source code.
 
-**Do Mode** (`/dg:do`) - Claude implements changes from a prompt or plan. Full-cycle: plan, implement, test, commit.
+**Do Mode** (`/dg:do`) - The coding agent implements changes from a prompt or plan. Full-cycle: plan, implement, test, commit.
 
 Separate exploration from execution. Plans propose, do executes.
 
 ## Install
 
-**Prerequisites:** Node.js 18+, Claude Code CLI
+**Prerequisites:** Node.js 18+, one supported coding-agent CLI (Claude CLI or Codex CLI)
 
 ```bash
 git clone <repo-url> && cd delegate
 npm install && npm run build
+# Codex
+npx delegate-codex install
+# Claude
 npx delegate-claude install
 ```
 
-The installer copies commands, agents, and hooks into `~/.claude/` where Claude Code discovers them automatically. No marketplace or plugin registration required.
+If you prefer one CLI, `delegate-agent` requires an explicit target:
 
-Restart Claude Code, then initialize delegate in your project:
+```bash
+npx delegate-agent install codex
+npx delegate-agent install claude
+```
+
+The installer supports both environments:
+- `claude`: installs commands and agents into `~/.claude/`
+- `codex`: installs the delegate skill into `~/.codex/skills/delegate`
+
+Restart your coding agent, then initialize delegate in your project:
 
 ```
 /dg:init
 ```
 
-This creates `.delegate/`, adds config, updates `.gitignore`, and adds usage docs to your `CLAUDE.md`.
-
-Verify everything is running:
-
-```
-/dg:status
-```
+This creates `.delegate/`, adds config, updates `.gitignore`, and adds usage docs to your `AGENTS.md`.
 
 ### Uninstall
 
 ```bash
+npx delegate-codex uninstall
 npx delegate-claude uninstall
+# or:
+npx delegate-agent uninstall codex
+npx delegate-agent uninstall claude
 ```
 
 ## Commands
@@ -50,7 +60,6 @@ npx delegate-claude uninstall
 /dg:do add dark mode       # Plan then implement from prompt
 /dg:do plan                # Show all unimplemented loops
 /dg:do 02                  # Execute specific loop from plan
-/dg:status                 # Check daemon and plan status
 /dg:init                   # Initialize delegate in a project
 ```
 
@@ -75,32 +84,27 @@ npx delegate-claude uninstall
 ## Architecture
 
 ```
-Claude Code Session
+Coding Agent Session
 +------------------------------------------+
-|  /dg:study    /dg:do      /dg:status     |
-|      |            |            |          |
-|      v            v            v          |
-|  plan         do           status         |
-|  planner      executor     reporter       |
-|      |            |            |          |
-|      v            v            v          |
-|  .delegate/ (IPC layer)                   |
-|  +-- daemon.status                        |
-|  +-- plan.state                           |
-|  +-- tasks/       results/                |
-|  +-- loop_plans/  loops/                  |
+|  /dg:study           /dg:do              |
+|      |                   |               |
+|      v                   v               |
+|  dg-study-planner    dg-planner          |
+|                      dg-executor         |
+|                      dg-tester           |
+|      |                   |               |
+|      v                   v               |
+|  .delegate/                              |
+|  +-- loop_plans/     loops/              |
+|  +-- plan.state      config.json         |
 +------------------------------------------+
-               |
-               v
-Delegate Daemon (background)
-  File Watcher | Task Processor | LLM Provider
 ```
 
 ### Components
 
-**Plugin** - Commands (`/dg:*`), agents (dg-planner, dg-executor, dg-tester, dg-study-planner), hooks (session lifecycle)
+**Commands** - Slash commands (`/dg:study`, `/dg:do`, `/dg:init`) for user interaction
 
-**Daemon** - File watcher, task processor, idle detection, token budget, LLM provider interface
+**Agents** - Specialized agents (dg-planner, dg-executor, dg-tester, dg-study-planner, dg-doc-generator)
 
 **Shared** - Types, config, state management
 
@@ -109,7 +113,6 @@ Delegate Daemon (background)
 ```bash
 npm run build        # Compile TypeScript
 npm run dev          # Watch mode
-npm run daemon       # Start daemon manually
 npm test             # Run tests
 ```
 

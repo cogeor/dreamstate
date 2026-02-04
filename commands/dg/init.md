@@ -16,7 +16,7 @@ Create the `.delegate/` directory structure and update project files. This comma
 ## Step 1: Create directories
 
 ```bash
-mkdir -p .delegate/tasks .delegate/results .delegate/loops .delegate/loop_plans
+mkdir -p .delegate/loops .delegate/loop_plans
 ```
 
 ## Step 2: Create config.json (if missing)
@@ -25,22 +25,6 @@ Check if `.delegate/config.json` exists. If not, create:
 
 ```json
 {
-  "daemon": {
-    "provider": "claude",
-    "model": "haiku",
-    "plan_timeout_minutes": 5,
-    "token_budget_per_hour": 10000,
-    "auto_study": {
-      "enabled": false,
-      "model": "haiku",
-      "max_iterations": 10,
-      "prompt": null
-    }
-  },
-  "watch": {
-    "patterns": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
-    "ignore": ["node_modules", "dist", ".git", ".delegate"]
-  },
   "docs": {
     "enabled": true,
     "patterns": ["src/**/*.ts", "src/**/*.tsx"],
@@ -61,9 +45,9 @@ If `.gitignore` doesn't contain `.delegate/`, append:
 
 If no `.gitignore` exists, create one with this content.
 
-## Step 4: Update CLAUDE.md
+## Step 4: Update AGENTS.md
 
-If `CLAUDE.md` doesn't contain a `## Delegate` section, append:
+If `AGENTS.md` doesn't contain a `## Delegate` section, append:
 
 ```markdown
 
@@ -78,7 +62,6 @@ This project uses the Delegate plugin for spec-driven development.
 |---------|---------|
 | `/dg:study [model] [theme]` | Study the codebase, propose loops |
 | `/dg:do [args]` | Implement one or more loops |
-| `/dg:status` | Show daemon and study status |
 
 **Workflow:**
 1. `/dg:study` — explores codebase, web, tests; produces loop drafts with acceptance criteria
@@ -88,7 +71,7 @@ This project uses the Delegate plugin for spec-driven development.
 Loop drafts live in `.delegate/loop_plans/`. Each draft includes acceptance tests that `/dg:do` uses to verify the implementation before committing.
 ```
 
-If no `CLAUDE.md` exists, create one with a `# CLAUDE.md` header and the above content.
+If no `AGENTS.md` exists, create one with a `# AGENTS.md` header and the above content.
 
 ## Step 5: Report
 
@@ -97,7 +80,7 @@ Delegate Initialized
   .delegate/     {created|exists}
   config.json    {created|exists}
   .gitignore     {updated|already has .delegate/}
-  CLAUDE.md      {updated|already has delegate section}
+  AGENTS.md      {updated|already has delegate section}
 
-Next: npm run daemon, then /dg:status
+Next: /dg:study to explore, /dg:do to implement
 ```

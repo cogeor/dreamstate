@@ -1,18 +1,19 @@
 {
-  "name": "delegate-claude",
+  "name": "delegate-agent",
   "version": "0.1.0",
-  "description": "A Claude Code plugin with background daemon for spec-driven development (delegate)",
+  "description": "Spec-driven workflow orchestration for coding agents: separate study from do, execute loops, test, and commit cleanly",
   "type": "module",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "daemon": "tsx src/daemon/index.ts",
-    "test": "tsx src/daemon/ipc.test.ts && tsx src/daemon/token-budget.test.ts",
+    "test": "echo \"no tests yet\"",
     "prepare": "npm run build",
     "prepublishOnly": "npm run build"
   },
   "bin": {
-    "delegate-claude": "./bin/delegate-claude.js"
+    "delegate-agent": "./bin/delegate-agent.js",
+    "delegate-claude": "./bin/delegate-claude.js",
+    "delegate-codex": "./bin/delegate-codex.js"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -21,13 +22,9 @@
     ".claude-plugin/",
     "commands/",
     "agents/",
-    "hooks/",
     "bin/",
     "dist/"
   ],
-  "dependencies": {
-    "chokidar": "^3.6.0"
-  },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "tsx": "^4.7.0",

@@ -1,10 +1,9 @@
 {
   "name": "delegate",
   "version": "0.1.0",
-  "description": "Spec-driven development with background daemon for Claude Code",
+  "description": "Spec-driven workflow orchestration for coding agents: study proposals and execute tested implementation loops",
   "author": {
     "name": "cogeor"
   },
-  "license": "MIT",
-  "hooks": "./hooks/hooks.json"
+  "license": "MIT"
 }

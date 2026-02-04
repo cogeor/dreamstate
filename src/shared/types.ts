@@ -1,74 +1,9 @@
-export interface DaemonStatus {
-  pid: number;
-  startedAt: string;
-  lastActivity: string;
-  uptime: number;
-  watching: string[];
-  tasksProcessed: number;
-  tokenBudget?: {
-    used: number;
-    limit: number;
-    remaining: number;
-    isPaused: boolean;
-  };
-}
-
-export interface Task {
-  id: string;
-  type: 'ping' | 'file-change' | 'reflect';
-  payload: unknown;
-  createdAt: string;
-}
-
-export interface TaskResult {
-  taskId: string;
-  success: boolean;
-  result?: unknown;
-  error?: string;
-  completedAt: string;
-}
-
-export interface PingResult {
-  pong: true;
-  uptime: number;
-  message: string;
-}
-
-export interface FileChangePayload {
-  filePath: string;
-}
-
 export interface Config {
-  daemon: {
-    provider: ProviderName;    // LLM provider (claude, opencode, codex, auto)
-    plan_timeout_minutes: number;
-    token_budget_per_hour: number;
-    model: string;
-    auto_plan: {
-      enabled: boolean;        // Whether to request plan mode when user is idle
-      model: 'haiku' | 'sonnet' | 'opus';  // Model to use for auto-plan
-      max_iterations: number;  // Max iterations per plan session (throttle)
-      prompt?: string;         // Optional focus prompt for plan sessions
-    };
-  };
-  watch: {
-    patterns: string[];
-    ignore: string[];
-  };
   docs: {
     enabled: boolean;
     patterns: string[];
     ignore: string[];
   };
-}
-
-export interface DaemonRequest {
-  id: string;
-  action: 'start-plan' | 'stop-plan';
-  model?: string;
-  max_iterations?: number;
-  prompt?: string;
-  createdAt: string;
 }
 
 export interface LoopStatus {
@@ -128,10 +63,6 @@ export interface PlanState {
   }>;
 }
 
-export type Model = 'haiku' | 'sonnet' | 'opus';
-
-export type ProviderName = 'claude' | 'opencode' | 'codex' | 'auto';
-
 export interface CommitInfo {
   hash: string;
   message: string;
@@ -146,38 +77,4 @@ export interface TestResult {
   readyForCommit: boolean;
   summary: string;
   failures?: string[];
-}
-
-export interface TokenUsage {
-  timestamp: string;
-  operation: string;
-  tokensUsed: number;
-  model: string;
-}
-
-export interface TokenBudget {
-  hourlyLimit: number;
-  currentHourUsage: number;
-  hourStartedAt: string;
-  history: TokenUsage[];
-  isPaused: boolean;
-}
-
-export interface FileTask {
-  id: string;
-  type: 'file-directive';
-  filePath: string;
-  directive: string;
-  instruction: string;
-  lineNumber: number;
-  createdAt: string;
-}
-
-export interface FileTaskResult {
-  taskId: string;
-  success: boolean;
-  output?: string;
-  error?: string;
-  tokensUsed: number;
-  completedAt: string;
 }

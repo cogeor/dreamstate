@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-Guidance for Claude Code working with this repository.
+Guidance for coding agents working with this repository.
 
 ## Delegate
 
-Delegate is a Claude Code plugin with a background daemon for spec-driven development.
+Delegate is a coding-agent plugin for spec-driven development.
 
 **Core philosophy:** Humans write plan drafts, agents write self-cleaning code.
 
@@ -17,7 +17,6 @@ For loop workflow and commit process, see [WORKFLOW.md](WORKFLOW.md).
 ```bash
 npm install          # Install dependencies
 npm run build        # Compile TypeScript
-npm run daemon       # Start daemon (dev)
 ```
 
 ## Plugin Development
@@ -48,11 +47,6 @@ allowed-tools:
 Agent system prompt
 ```
 
-**Hooks** (configured via `.claude-plugin/plugin.json` -> `hooks/hooks.json`):
-- `SessionStart`: Auto-starts daemon
-- `UserPromptSubmit`: Processes daemon requests (e.g., auto-study when idle)
-- `SessionEnd`: Cleans up daemon on exit
-
 ## Delegate
 
 A loop is a focused unit of work that results in exactly one commit. Each loop has a draft describing what to do, acceptance tests for verification, and a clear scope. Loops are the fundamental unit — everything in delegate either creates loops or implements them.
@@ -62,7 +56,6 @@ A loop is a focused unit of work that results in exactly one commit. Each loop h
 |---------|---------|
 | `/dg:study [model] [theme]` | Study the codebase, propose loops |
 | `/dg:do [args]` | Implement one or more loops |
-| `/dg:status` | Show daemon and study status |
 
 **Workflow:**
 1. `/dg:study` — explores codebase, web, tests; produces loop drafts with acceptance criteria
@@ -75,13 +68,9 @@ Loop drafts live in `.delegate/loop_plans/`. Each draft includes acceptance test
 
 ```
 src/
-├── daemon/          # Background daemon (file watcher, IPC, providers)
-├── hooks/           # Hook implementations (session-start, prompt-submit, session-end)
-├── shared/          # Shared types and config
-└── utils/           # Utilities
+└── shared/          # Shared types and config
 
 commands/dg/         # Slash commands
 agents/              # Agent definitions
-hooks/               # Hook configuration (hooks.json)
 bin/                 # CLI scripts
 ```

@@ -108,7 +108,6 @@ Generate documentation in this format:
 ## Constraints
 
 - Only document src/ files
-- Respect token budget
 - One file per invocation
 - Don't modify source files
 

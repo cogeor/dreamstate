@@ -61,13 +61,13 @@ Updated: {timestamp}
 
 **Example:**
 ```
-feat(daemon): add token budget tracking
+feat(study): add loop draft validation
 
-- Add TokenBudget type
-- Create tracker class
-- Integrate into daemon
+- Add draft schema validation
+- Create validator utility
+- Integrate into study planner
 
-Implements: 20260201-193500-token-budgeting
+Implements: 20260201-193500-draft-validation
 ```
 
 **Required:** Always include `Implements: {loop-folder}` line.
@@ -102,5 +102,3 @@ Reflection assesses three dimensions (1-5 scale):
 | **Value** | Did this add meaningful value? |
 | **Quality** | Is the implementation clean and maintainable? |
 | **Coverage** | Are critical paths tested? |
-
-Check reflection status with `/dg:status`.

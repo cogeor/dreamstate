@@ -68,7 +68,7 @@ If first arg is not a model name, treat entire input as the theme (default model
    Model: {model}
    Theme: {theme or "General exploration"}
    Types: [T]emplate -> [I]ntrospect -> [R]esearch -> [F]lect -> [V]erify
-   Check progress: /dg:status
+   Study progress tracked in loop_plans/
    ```
 
 ## Step 3: Iteration Loop
