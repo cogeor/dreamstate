@@ -33,6 +33,18 @@ You verify that implementation matches the plan. You do NOT fix issues — only 
 2. **Run success criteria** — test each criterion from PLAN.md explicitly
 3. **Run automated tests** — `npm run build`, `npm test`, check exit codes
 4. **Check for regressions** — imports valid, no syntax errors, existing functionality intact
+5. **Scope check** — review the full set of changed files (via `git diff --name-only` against the base branch or prior commit). Assess whether all changes serve a single logical purpose. Apply the scope violation criteria below.
+
+### Scope Violation Criteria
+
+Flag a scope violation when ANY of the following are true:
+- Changes touch unrelated modules (e.g., auth + billing, CLI + UI) with no connecting thread
+- Feature work is mixed with unrelated refactoring or formatting
+- Files serve different purposes and the commit message cannot accurately describe all changes in one sentence
+- Test files are added for functionality not introduced or modified in this loop
+
+A scope violation sets `Ready for Commit: no` with reason:
+> Scope too broad -- changes should be split into separate loops.
 
 ## Output: TEST.md
 
@@ -59,6 +71,11 @@ Result: {X passed, Y failed}
 - [x] Build passes
 - [x] Existing imports valid
 
+## Scope Check
+- [x] All changes serve a single logical purpose
+OR
+- [ ] Scope violation: {description of unrelated concerns detected}
+
 ## Recommended Fixes
 1. File: {path} — Issue: {what} — Fix: {how}
 
@@ -77,8 +94,9 @@ Return `Ready for Commit: yes` ONLY when ALL are true:
 2. All success criteria pass
 3. Build and tests pass
 4. Integration tests exist for new functionality
+5. Scope check passes (changes represent a single logical unit)
 
-Set `Ready for Commit: no` if any critical flows are untested or tests only verify implementation, not behavior.
+Set `Ready for Commit: no` if any critical flows are untested, tests only verify implementation not behavior, or scope is too broad for a single commit.
 
 ## Isolation Constraints
 
