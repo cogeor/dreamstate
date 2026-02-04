@@ -38,38 +38,9 @@ If first arg is not a model name, treat entire input as the theme (default model
 
 1. Check `.delegate/plan.state` — if already active, report and stop
 2. Create session folder: `.delegate/loop_plans/{YYYYMMDD-HHMMSS}-plan-session/`
-3. Write `.delegate/plan.state`:
-   ```json
-   {
-     "active": true,
-     "startedAt": "{timestamp}",
-     "model": "{model}",
-     "theme": "{theme or null}",
-     "iterations": 0,
-     "currentLoopPlan": "{path}",
-     "lastIteration": null,
-     "tokensUsed": 0,
-     "session_summaries": []
-   }
-   ```
-   Preserve existing `session_summaries` from previous plan.state if present.
-
-4. If theme provided, write `{session_folder}/THEME.md`:
-   ```markdown
-   # Plan Session Theme
-   > This theme guides ALL iterations, not just one.
-   **Theme:** {theme}
-   ```
-
-5. Report study mode started:
-   ```
-   Study Mode Active
-   ================
-   Model: {model}
-   Theme: {theme or "General exploration"}
-   Types: [T]emplate -> [I]ntrospect -> [R]esearch -> [F]lect -> [V]erify
-   Study progress tracked in loop_plans/
-   ```
+3. Write `.delegate/plan.state` with fields: `active` (true), `startedAt` (timestamp), `model`, `theme` (string or null), `iterations` (0), `currentLoopPlan` (session path), `lastIteration` (null), `tokensUsed` (0), `session_summaries` (array — preserve from previous plan.state if present)
+4. If theme provided, write `{session_folder}/THEME.md` with heading "Plan Session Theme", a blockquote noting it guides all iterations, and the theme text
+5. Report: model, theme (or "General exploration"), the 5 types `[T]->[I]->[R]->[F]->[V]`, and that progress is tracked in loop_plans/
 
 ## Step 3: Iteration Loop
 
@@ -81,33 +52,16 @@ Repeat until interrupted or max_iterations reached:
    - 3, 8, 13... → [R] Research
    - 4, 9, 14... → [F] Reflect
    - 5, 10, 15... → [V] Verify
-
 2. Load previous session summaries from plan.state
-
-3. Spawn **dg-study-planner** with model={model}:
-   ```
-   Study Mode Iteration {N} of {max}
-   Theme: {theme or "General exploration"}
-   Type: {type}
-   Session: {path}
-
-   Previous Sessions:
-   - {sessionId} ({N} iter): {summary}
-   ```
-
-4. Agent produces: one ITERATIONS.md row + one draft file (feature proposal, improvement, or test approach)
-
+3. Spawn **dg-study-planner** with model={model}, passing: iteration number, max, theme, type, session path, and previous session summaries (id, iteration count, summary for each)
+4. Agent produces: one ITERATIONS.md row + one draft file
 5. Increment iterations, update plan.state
-
 6. If iterations >= max_iterations → stop, set active=false
-
 7. Brief pause (5 seconds), check if interrupted
 
 ## Step 4: On Stop
 
 When study mode ends (interrupt or max_iterations):
-
 1. Read ITERATIONS.md, extract key findings
-2. Create session summary, append to plan.state.session_summaries
-3. Keep only last 5 summaries
-4. Report final iteration count
+2. Create session summary, append to plan.state.session_summaries (keep only last 5)
+3. Report final iteration count
