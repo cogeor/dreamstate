@@ -22,9 +22,11 @@ Given a plan draft (high-level description), create a structured plan that an ex
 You receive:
 - **Draft**: User's description of what they want
 - **Context**: Current project state from STATE.md
-- **Output path**: Where to write PLAN.md
+- **Output path**: Where to write the plan output (either PLAN.md or LOOPS.yaml depending on scope assessment)
 
 ## Output Format
+
+### Single-Scope Output (PLAN.md)
 
 Your PLAN.md must include:
 - Current Test Status (run `npm run build && npm test` first)
@@ -34,6 +36,46 @@ Your PLAN.md must include:
 - Risks and mitigations
 - Acceptance Criteria (all testable with commands)
 - Expected Post-Implementation test status
+
+### Multi-Scope Output (LOOPS.yaml)
+
+When scope assessment determines the draft is multi-scope, produce a LOOPS.yaml manifest instead of PLAN.md. Write it to `{output_path}/LOOPS.yaml`.
+
+```yaml
+loops:
+  - id: 1
+    slug: short-kebab-name
+    description: One-line summary of this loop's purpose
+    depends_on: []
+    draft: |
+      # Loop Title
+
+      Scoped-down draft content in Markdown.
+      This should be self-contained -- an executor reading only
+      this draft field should understand what to implement.
+
+  - id: 2
+    slug: another-change
+    description: One-line summary
+    depends_on: [1]
+    draft: |
+      # Another Loop Title
+
+      Scoped-down draft content.
+```
+
+**Field definitions:**
+- `id`: Sequential integer starting at 1
+- `slug`: Short kebab-case name suitable for folder naming (becomes part of `.delegate/loops/{timestamp}-{slug}/`)
+- `description`: Single line, imperative mood (e.g., "Add scope assessment to planner agent")
+- `depends_on`: List of integer ids this loop must wait for. Empty list `[]` if independent. Only add dependencies when one loop's output is required as input to another.
+- `draft`: Inline Markdown block (using YAML literal block scalar `|`). Must be self-contained -- include enough context that a planner receiving only this draft can produce a complete PLAN.md. Reference file paths explicitly.
+
+**Rules:**
+- Prefer fewer loops. Two loops is better than five when the work is related.
+- Each loop must be a single commit-sized unit of work.
+- Independent loops (no `depends_on` relationship) can be executed in parallel by the orchestrator.
+- The LOOPS.yaml file replaces PLAN.md -- write `{output_path}/LOOPS.yaml` instead of `{output_path}/PLAN.md`.
 
 ## Planning Guidelines
 
@@ -74,6 +116,21 @@ Before writing the plan:
 3. **Find similar implementations**
    - Search for related code
    - Note patterns to reuse
+
+## Scope Assessment
+
+After exploration and before writing any output, determine whether the draft describes a single cohesive change or multiple independent changes.
+
+**Criteria for multi-scope** -- the draft is multi-scope only when ALL of these are clearly present:
+- The draft targets different modules or subsystems for different reasons (not just touching multiple files for one feature)
+- The draft contains independent features that could ship separately without breaking anything
+- The draft includes separable concerns (e.g., a refactor AND a new feature, or two unrelated bug fixes)
+
+**Bias toward single-scope:** When in doubt, treat the draft as single-scope. Only split when changes are genuinely independent and would naturally be separate commits. A draft that touches many files for one coherent purpose is single-scope.
+
+**Decision:**
+- Single-scope: proceed to produce `PLAN.md` as normal
+- Multi-scope: proceed to produce `LOOPS.yaml` manifest
 
 ## Constraints
 
