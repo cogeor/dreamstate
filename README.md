@@ -6,7 +6,7 @@ Spec-driven workflow orchestration for coding agents: it separates exploration (
 
 **Study Mode** (`/dg:study`) - The coding agent continuously explores your codebase, analyzes patterns, runs tests, and proposes improvements. Plans are read-only: they can create tests but cannot modify source code.
 
-**Do Mode** (`/dg:do`) - The coding agent implements changes from a prompt or plan. Full-cycle: plan, implement, test, commit.
+**Do Mode** (`/dg:work`) - The coding agent implements changes from a prompt or plan. Full-cycle: plan, implement, test, commit.
 
 Separate exploration from execution. Plans propose, do executes.
 
@@ -57,9 +57,9 @@ npx delegate-agent uninstall claude
 ```bash
 /dg:study                   # Enter study mode (continuous exploration)
 /dg:study sonnet testing     # Study with model and focus theme
-/dg:do add dark mode       # Plan then implement from prompt
-/dg:do plan                # Show all unimplemented loops
-/dg:do 02                  # Execute specific loop from plan
+/dg:work add dark mode       # Plan then implement from prompt
+/dg:work plan                # Show all unimplemented loops
+/dg:work 02                  # Execute specific loop from plan
 /dg:init                   # Initialize delegate in a project
 ```
 
@@ -71,11 +71,11 @@ npx delegate-agent uninstall claude
    -> Creates loop plan with proposals in .delegate/loop_plans/
 
 2. REVIEW: Check what was proposed
-   /dg:do plan
+   /dg:work plan
    -> Shows unimplemented loops
 
 3. DO: Execute a loop
-   /dg:do 02
+   /dg:work 02
    -> Plans, implements, tests, commits
 
 4. REPEAT
@@ -86,7 +86,7 @@ npx delegate-agent uninstall claude
 ```
 Coding Agent Session
 +------------------------------------------+
-|  /dg:study           /dg:do              |
+|  /dg:study           /dg:work            |
 |      |                   |               |
 |      v                   v               |
 |  dg-study-planner    dg-planner          |
@@ -102,7 +102,7 @@ Coding Agent Session
 
 ### Components
 
-**Commands** - Slash commands (`/dg:study`, `/dg:do`, `/dg:init`) for user interaction
+**Commands** - Slash commands (`/dg:study`, `/dg:work`, `/dg:init`) for user interaction
 
 **Agents** - Specialized agents (dg-planner, dg-executor, dg-tester, dg-study-planner, dg-doc-generator)
 

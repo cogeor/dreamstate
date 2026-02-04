@@ -11,7 +11,7 @@ Delegate is a coding-agent plugin for spec-driven development. It provides slash
 | Command | Purpose |
 |---------|---------|
 | `/dg:study` | Explore codebase, propose implementation loops |
-| `/dg:do` | Implement loops (plan, execute, test, commit) |
+| `/dg:work` | Implement loops (plan, execute, test, commit) |
 | `/dg:init` | Initialize delegate in a project |
 
 ### Agents (`agents/`)
@@ -56,7 +56,7 @@ bin/                 # Installer scripts
 ## Workflow
 
 1. **Study** (`/dg:study`) -- Explores codebase in 5-phase cycles [T]emplate, [I]ntrospect, [R]esearch, [F]lect, [V]erify. Produces loop drafts with acceptance criteria.
-2. **Do** (`/dg:do`) -- Implements loops through plan-execute-test-commit pipeline. Each loop results in exactly one commit.
+2. **Do** (`/dg:work`) -- Implements loops through plan-execute-test-commit pipeline. Each loop results in exactly one commit.
 
 ## Design Principles
 

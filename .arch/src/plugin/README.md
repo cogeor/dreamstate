@@ -9,7 +9,7 @@ Claude Code plugin providing slash commands and specialized agents for the deleg
 **Commands (dg namespace):**
 - `/dg:status` - Show daemon and plan mode status
 - `/dg:study [model] [theme]` - Enter continuous study mode
-- `/dg:do [args]` - Execute plan/implement/test loops
+- `/dg:work [args]` - Execute plan/implement/test loops
 - `/dg:init` - Initialize delegate in a project
 
 **Agents:**
@@ -54,7 +54,7 @@ Claude Code plugin providing slash commands and specialized agents for the deleg
 |------|---------|
 | commands/dg/status.md | Displays daemon and plan status |
 | commands/dg/study.md | Starts continuous study mode |
-| commands/dg/do.md | Executes loops with dependency resolution |
+| commands/dg/work.md | Executes loops with dependency resolution |
 | commands/dg/init.md | Initializes delegate in a project |
 | agents/dg-planner.md | Transforms drafts into detailed plans |
 | agents/dg-executor.md | Implements tasks from plans |

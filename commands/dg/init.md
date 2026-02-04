@@ -61,14 +61,14 @@ This project uses the Delegate plugin for spec-driven development.
 | Command | Purpose |
 |---------|---------|
 | `/dg:study [model] [theme]` | Study the codebase, propose loops |
-| `/dg:do [args]` | Implement one or more loops |
+| `/dg:work [args]` | Implement one or more loops |
 
 **Workflow:**
 1. `/dg:study` — explores codebase, web, tests; produces loop drafts with acceptance criteria
-2. `/dg:do plan` — review proposed loops
-3. `/dg:do 02` or `/dg:do add logout button` — implement loops (plan, execute, test, commit each)
+2. `/dg:work plan` — review proposed loops
+3. `/dg:work 02` or `/dg:work add logout button` — implement loops (plan, execute, test, commit each)
 
-Loop drafts live in `.delegate/loop_plans/`. Each draft includes acceptance tests that `/dg:do` uses to verify the implementation before committing.
+Loop drafts live in `.delegate/loop_plans/`. Each draft includes acceptance tests that `/dg:work` uses to verify the implementation before committing.
 ```
 
 If no `AGENTS.md` exists, create one with a `# AGENTS.md` header and the above content.
@@ -82,5 +82,5 @@ Delegate Initialized
   .gitignore     {updated|already has .delegate/}
   AGENTS.md      {updated|already has delegate section}
 
-Next: /dg:study to explore, /dg:do to implement
+Next: /dg:study to explore, /dg:work to implement
 ```

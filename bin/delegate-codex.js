@@ -29,7 +29,7 @@ description: Delegate workflows for spec-driven planning and execution loops.
 
 Use these references:
 - \`commands/dg/study.md\`
-- \`commands/dg/do.md\`
+- \`commands/dg/work.md\`
 - \`commands/dg/init.md\`
 
 When asked to plan and implement work:

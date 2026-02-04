@@ -1,5 +1,5 @@
 ---
-name: dg:do
+name: dg:work
 description: Start a plan/implement/test loop from a plan draft or do plan (user)
 allowed-tools:
   - Read
@@ -11,7 +11,7 @@ allowed-tools:
   - Edit
 ---
 
-# /dg:do - Execute Implementation Loops
+# /dg:work - Execute Implementation Loops
 
 You are the ORCHESTRATOR. You coordinate agents and handle commits yourself.
 
