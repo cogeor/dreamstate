@@ -1,126 +1,92 @@
 # Delegate
 
-A coding-agent plugin that splits work into two phases: **study** (explore and propose) and **work** (plan, implement, test, commit).
+A coding-agent plugin that splits work into two phases: **study** (explore and propose) and **work** (implement and commit).
 
-Study mode explores your codebase and produces drafts in `.delegate/loop_plans/`. Each draft describes a feature proposal, an implementation plan, and how to test it. Work mode takes a draft, builds a full plan with example code, implements it, runs tests, and commits — all in `.delegate/loops/`.
-
-## Example: Adding `--verbose` to a CLI tool
+## Example
 
 ```
-# 1. Study the codebase with a theme
-/dg:study cli flags
+# 1. Study with a theme
+/dg:study auth
 
-# Study mode runs 5-phase cycles: [T]emplate, [I]ntrospect, [R]esearch, [F]lect, [V]erify
-# After a few iterations, it produces drafts like:
-#   .delegate/loop_plans/20260204-140000-plan-session/
-#     01-verbose-flag.md      <- "Add --verbose flag to enable debug logging"
-#     02-flag-validation.md   <- "Add unknown-flag error handling"
-#     OVERVIEW.md
-#     ITERATIONS.md
+# Creates: .delegate/study/20240115-143022-auth/
+#   ├── S.md, I.md, T.md (optional)
+#   └── TASK.md (always)
 
-# 2. Review what was proposed
-/dg:work plan
-# Loop 01: Add --verbose flag to enable debug logging [proposed]
-# Loop 02: Add unknown-flag error handling             [proposed]
+# 2. Implement the TASK
+/dg:work 20240115-143022-auth
 
-# 3. Implement the first draft
-/dg:work 01
+# Creates: .delegate/work/20240115-143030-auth/
+#   ├── TASK.md
+#   ├── LOOPS.yaml
+#   ├── 01/PLAN.md, IMPLEMENTATION.md, TEST.md
+#   └── (commits after each loop)
 
-# Work mode creates a full loop in .delegate/loops/:
-#   .delegate/loops/20260204-141500-verbose-flag/
-#     DRAFT.md            <- copied from the study draft
-#     PLAN.md             <- detailed plan with code examples
-#     IMPLEMENTATION.md   <- what was actually changed
-#     TEST.md             <- test results
-#     STATUS.md           <- phase: complete
-#
-# Then commits:
-#   feat(cli): add --verbose flag for debug logging
-
-# 4. Or implement directly from a prompt (no study needed)
-/dg:work add --help flag with usage examples
+# 3. Or implement directly from prompt
+/dg:work add --help flag
 ```
 
 ## Install
 
-**Prerequisites:** Node.js 18+, one supported coding-agent CLI (Claude CLI or Codex CLI)
+**Prerequisites:** Node.js 18+, Claude Code CLI
 
 ```bash
 git clone <repo-url> && cd delegate
-npm install && npm run build
+npm install
 
-# Claude
+# Install to Claude Code
 npx delegate-claude install
 
-# Codex
-npx delegate-codex install
-
-# Or specify explicitly
-npx delegate-agent install claude
-npx delegate-agent install codex
-```
-
-Restart your coding agent, then initialize delegate in your project:
-
-```
+# Restart Claude Code, then initialize in your project
 /dg:init
 ```
-
-This creates `.delegate/`, updates `.gitignore`, and adds usage docs to `AGENTS.md`.
 
 ### Uninstall
 
 ```bash
 npx delegate-claude uninstall
-npx delegate-codex uninstall
 ```
 
 ## Commands
 
-```bash
-/dg:study                     # Explore codebase, produce drafts
-/dg:study sonnet testing      # Study with specific model and theme
-/dg:work plan                 # List unimplemented drafts
-/dg:work 01                   # Implement a specific draft
-/dg:work add dark mode        # Implement directly from a prompt
-/dg:init                      # Initialize delegate in a project
-```
+| Command | Purpose |
+|---------|---------|
+| `/dg:study [model] [theme]` | SITR cycles → TASKs |
+| `/dg:work {stump}` | Execute TASK → loops → commits |
+| `/dg:work plan {prompt}` | Plan only, no execute |
+| `/dg:work {prompt}` | Plan + execute from prompt |
+| `/dg:init` | Initialize delegate in project |
 
 ## How It Works
 
 ```
- /dg:study                          /dg:work
-     |                                  |
-     v                                  v
- dg-study-planner               dg-planner
- (explore, propose)             dg-executor
-     |                          dg-tester
-     v                                  |
- .delegate/loop_plans/                  v
-   drafts (proposals)          .delegate/loops/
-                                 full implementations
-                                 + git commit
+/dg:study                    /dg:work {stump}
+    │                              │
+    ▼                              ▼
+[S] Search (optional)        Read TASK.md
+[I] Introspect (optional)         │
+[T] Template (optional)           ▼
+[R] Review (always)          work-planner → LOOPS.yaml
+    │                              │
+    ▼                         ┌────┴────┐
+.delegate/study/{stump}/      │  Loop   │
+└── TASK.md                   │  01/    │
+                              ├─────────┤
+                              │ PLAN.md │
+                              │ IMPL.md │
+                              │ TEST.md │
+                              └────┬────┘
+                                   │
+                              git commit
 ```
 
-**Study** is read-only. It explores the codebase in 5-phase cycles and writes drafts — one per iteration. Each draft contains a feature proposal, implementation plan, and test approach. Study never modifies source code or commits.
-
-**Work** is the execution engine. It takes a draft (or a prompt), creates a detailed plan with code examples, spawns agents to implement and test, then commits. One loop = one commit.
-
-## Project Structure
+## Output Structure
 
 ```
-commands/dg/         # Slash commands (study, work, init)
-agents/              # Agent definitions (planner, executor, tester, study-planner, doc-generator)
-bin/                 # CLI installer scripts
-.claude-plugin/      # Plugin manifest
-```
-
-## Development
-
-```bash
-npm run build        # Compile TypeScript
-npm run dev          # Watch mode
-npm test             # Run tests
+.delegate/
+├── study/             # SITR cycle outputs
+├── work/              # Task execution
+├── templates/         # Cloned repos
+└── doc/               # Auto-generated docs
 ```
 
 ## License
