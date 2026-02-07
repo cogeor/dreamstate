@@ -1,6 +1,6 @@
 ---
 name: dg:init
-description: Initialize delegate in current project (user)
+description: Initialize delegate in current project
 allowed-tools:
   - Read
   - Write
@@ -11,25 +11,15 @@ allowed-tools:
 
 # /dg:init - Initialize Delegate
 
-Create the `.delegate/` directory structure and update project files. This command is idempotent — safe to run multiple times. Never overwrite existing config.
+Create the `.delegate/` directory structure. Idempotent — safe to run multiple times.
 
 ## Step 1: Create directories
 
 ```bash
-mkdir -p .delegate/loops .delegate/loop_plans
+mkdir -p .delegate/study .delegate/work .delegate/templates .delegate/doc
 ```
 
-## Step 2: Create config.json (if missing)
-
-Check if `.delegate/config.json` exists. If not, create:
-
-```json
-{}
-```
-
-If config.json already exists, do NOT overwrite it.
-
-## Step 3: Update .gitignore
+## Step 2: Update .gitignore
 
 If `.gitignore` doesn't contain `.delegate/`, append:
 ```
@@ -39,42 +29,48 @@ If `.gitignore` doesn't contain `.delegate/`, append:
 
 If no `.gitignore` exists, create one with this content.
 
-## Step 4: Update AGENTS.md
+## Step 3: Update CLAUDE.md
 
-If `AGENTS.md` doesn't contain a `## Delegate` section, append:
+If `CLAUDE.md` doesn't contain a `## Delegate` section, append:
 
 ```markdown
 
 ## Delegate
 
-This project uses the Delegate plugin for spec-driven development.
-
-**A loop is a focused unit of work that results in exactly one commit.** Each loop has a draft describing what to do, acceptance tests for verification, and a clear scope. Loops are the fundamental unit — everything in delegate either creates loops or implements them.
+This project uses Delegate for spec-driven development.
 
 **Commands:**
 | Command | Purpose |
 |---------|---------|
-| `/dg:study [model] [theme]` | Explore codebase, produce drafts in `.delegate/loop_plans/` |
-| `/dg:work [args]` | Implement loops in `.delegate/loops/` (plan, execute, test, commit) |
+| `/dg:study [model] [theme]` | SITR cycles → TASKs in `.delegate/study/` |
+| `/dg:work {stump}` | Execute TASK → loops in `.delegate/work/` |
 
 **Workflow:**
-1. `/dg:study` — explores codebase, web, tests; produces drafts with feature proposals, implementation plans, and test approaches
-2. `/dg:work plan` — review proposed drafts
-3. `/dg:work 02` or `/dg:work add logout button` — implement from drafts (plan, execute, test, commit each)
+1. `/dg:study auth` — explores codebase, produces TASK in `.delegate/study/{stump}/`
+2. `/dg:work {stump}` — implements TASK as loops in `.delegate/work/`
 
-Study drafts live in `.delegate/loop_plans/`. When `/dg:work` executes a draft, it creates a full loop in `.delegate/loops/` with detailed plans, implementation records, and test results.
+**Output:**
+```
+.delegate/
+├── study/{stump}/    # S.md, I.md, T.md, TASK.md
+├── work/{stump}/     # TASK.md, LOOPS.yaml, 01/, 02/...
+├── templates/        # Cloned repos, patterns
+└── doc/              # Auto-generated docs
+```
 ```
 
-If no `AGENTS.md` exists, create one with a `# AGENTS.md` header and the above content.
+If no `CLAUDE.md` exists, create one with this content.
 
-## Step 5: Report
+## Step 4: Report
 
 ```
 Delegate Initialized
-  .delegate/     {created|exists}
-  config.json    {created|exists}
-  .gitignore     {updated|already has .delegate/}
-  AGENTS.md      {updated|already has delegate section}
+  .delegate/study/      {created|exists}
+  .delegate/work/       {created|exists}
+  .delegate/templates/  {created|exists}
+  .delegate/doc/        {created|exists}
+  .gitignore            {updated|already has .delegate/}
+  CLAUDE.md             {updated|already has delegate section}
 
-Next: /dg:study to explore and propose, /dg:work to implement
+Next: /dg:study to explore, /dg:work to implement
 ```
