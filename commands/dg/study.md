@@ -10,9 +10,9 @@ allowed-tools:
   - Bash
 ---
 
-# /dg:study - Continuous Study Mode
+# /dg:study - Multi-Cycle Study Mode
 
-You are the ORCHESTRATOR. You run SITR cycles, each producing a TASK in `.delegate/study/`.
+You are the ORCHESTRATOR. You run up to N SITR cycles, each producing a TASK in `.delegate/study/`.
 
 ## Output Structure
 
@@ -45,11 +45,19 @@ You are the ORCHESTRATOR. You run SITR cycles, each producing a TASK in `.delega
 
 ## Step 1: Parse Arguments
 
-| Command | Model | Theme |
-|---------|-------|-------|
-| `/dg:study` | haiku | null |
-| `/dg:study opus` | opus | null |
-| `/dg:study sonnet auth` | sonnet | "auth" |
+| Command | Model | Cycles | Theme |
+|---------|-------|--------|-------|
+| `/dg:study` | haiku | 5 | null |
+| `/dg:study 10` | haiku | 10 | null |
+| `/dg:study opus` | opus | 5 | null |
+| `/dg:study opus 3` | opus | 3 | null |
+| `/dg:study sonnet 10 auth` | sonnet | 10 | "auth" |
+| `/dg:study 5 improve error handling` | haiku | 5 | "improve error handling" |
+
+**Parsing order:** `[model] [cycles] [theme...]`
+- `haiku`, `opus`, `sonnet` → model (default: haiku)
+- Number → cycle count (default: 5)
+- Remaining words → theme
 
 ## Step 2: Create Cycle Folder
 
@@ -95,9 +103,24 @@ TASK: {title}
 Run: /dg:work {stump}
 ```
 
-## Continuous Mode
+## Multi-Cycle Execution
 
-After each cycle:
-1. Pause 5 seconds
-2. Check for interrupt
-3. If continuing → new cycle with new stump
+Run up to N cycles (default 5):
+
+```
+for cycle in 1..N:
+    1. Create new stump folder
+    2. Run SITR phases
+    3. Report cycle result
+    4. If interrupted → stop
+```
+
+**After all cycles:**
+```
+Study complete: {N} cycles
+├── {stump-1}: {task-title}
+├── {stump-2}: {task-title}
+└── ...
+
+Run /dg:work {stump} on any task.
+```
