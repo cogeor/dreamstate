@@ -1,28 +1,103 @@
 # Delegate
 
-A coding-agent plugin that splits work into two phases: **study** (explore and propose) and **work** (implement and commit).
+A coding-agent plugin for spec-driven development. Splits work into two phases: **study** (explore and specify) and **work** (plan, implement, test). Work is done in loops, each handled by a seperate sub-agent, in parallel when possible. Delegate will split work into modular testable work packages, document, test, and commit them automatically when implemented.
 
-## Example
+**~1650 lines of markdown.** As minimal as possible.
+
+## Philosophy
+
+**Humans write and read plan drafts, agents write self-documenting code.**
+
+| Plan first, then implement | No code changes without a plan |
+| Markdown is code | Specs, plans, and docs are first-class artifacts |
+| One loop = one commit | Atomic, traceable changes |
+| Transparent workflow | All state visible in `.delegate/` as readable files |
+
+## Quick Start
+
+```bash
+# 1. Study a theme (runs 5 cycles by default, 2 here) → produces TASKs
+/dg:study 2 implement auth for this project look for git repos with a similar stack and best practices.
+
+# 2. Execute any task (will look in .delegate/study for a task with this name) → loops with commits
+/dg:work auth delegate task
+
+# Or work directly from a prompt
+/dg:work add retry logic to API calls
+```
+
+## Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/dg:init` | Initialize delegate in project |
+| `/dg:study [model] [N] [theme]` | Run up to N SITR cycles (default 5) → TASKs |
+| `/dg:work {stump}` | Execute study TASK → loops → commits |
+| `/dg:work plan {prompt}` | Plan only, no execution |
+| `/dg:work {prompt}` | Plan + execute from prompt |
+
+**Examples:** `/dg:study` (5 cycles default), `/dg:study 10`, `/dg:study opus 3 auth`
+
+## Study Cycle: SITR
+
+The study phase explores a theme before proposing solutions. Runs up to N cycles (default 5), each producing a TASK.md proposal. Intended for less expensive models running for long periods — users review the generated TASKs and decide which to implement.
+
+Study is composed of four phases, three optional:
+
+| Phase | Name | Purpose |
+|-------|------|---------|
+| **S** | Search | Web research for patterns and best practices, can also clone repositories for Template phase |
+| **I** | Introspect | Analyze source code for issues, gaps, improvements |
+| **T** | Template | Explore template repos for applicable patterns |
+| **R** | Review | Consolidate findings into actionable TASK.md *(always runs)* |
+
+**Theme-driven selection:**
+- `test`, `coverage` → I → R
+- `pattern`, `template` → T → R
+- `research`, `compare` → S → R
+- `refactor`, `improve` → I → R
+- No theme → S → I → T → R (all phases)
+
+**Output:** `.delegate/study/{stump}/TASK.md`
+
+## Work Cycle: Loops
+
+The work phase splits tasks from study sessions or user prompts into loops, which represent units of testable work. Each loop = one commit.
+Loops are implemented in parallel when possible.
 
 ```
-# 1. Study with a theme
-/dg:study auth
+TASK.md → LOOPS.yaml → Loop 01 → Loop 02 → ...
+                          │
+                    ┌─────┴─────┐
+                    │  PLAN.md  │  ← what to do
+                    │  IMPL.md  │  ← what was done
+                    │  TEST.md  │  ← verification
+                    └─────┬─────┘
+                          │
+                     git commit
+```
 
-# Creates: .delegate/study/20240115-143022-auth/
-#   ├── S.md, I.md, T.md (optional)
-#   └── TASK.md (always)
+**Four specialized agents:**
 
-# 2. Implement the TASK
-/dg:work 20240115-143022-auth
+| Agent | Role | Constraint |
+|-------|------|------------|
+| Planner | Breaks TASK into loops, writes PLAN.md | Read-only, cannot execute |
+| Implementer | Executes plan, writes IMPLEMENTATION.md | Only touches files in plan |
+| Tester | Verifies work, writes TEST.md | Reports only, does not fix |
+| Doc-generator | Updates `.delegate/doc/` post-commit | Non-blocking |
 
-# Creates: .delegate/work/20240115-143030-auth/
-#   ├── TASK.md
-#   ├── LOOPS.yaml
-#   ├── 01/PLAN.md, IMPLEMENTATION.md, TEST.md
-#   └── (commits after each loop)
+**Quality gate:** Commit only happens when TEST.md shows "Ready for Commit: yes"
 
-# 3. Or implement directly from prompt
-/dg:work add --help flag
+## Output Structure
+
+```
+.delegate/
+├── study/{stump}/     # SITR outputs → TASK.md
+├── work/{stump}/      # Loops → commits
+│   ├── LOOPS.yaml
+│   └── 01/, 02/...
+├── templates/         # Cloned reference repos
+└── doc/               # Auto-generated docs
 ```
 
 ## Install
@@ -32,62 +107,13 @@ A coding-agent plugin that splits work into two phases: **study** (explore and p
 ```bash
 git clone <repo-url> && cd delegate
 npm install
-
-# Install to Claude Code
 npx delegate-claude install
 
-# Restart Claude Code, then initialize in your project
+# Restart Claude Code, then in your project:
 /dg:init
 ```
 
-### Uninstall
-
-```bash
-npx delegate-claude uninstall
-```
-
-## Commands
-
-| Command | Purpose |
-|---------|---------|
-| `/dg:study [model] [theme]` | SITR cycles → TASKs |
-| `/dg:work {stump}` | Execute TASK → loops → commits |
-| `/dg:work plan {prompt}` | Plan only, no execute |
-| `/dg:work {prompt}` | Plan + execute from prompt |
-| `/dg:init` | Initialize delegate in project |
-
-## How It Works
-
-```
-/dg:study                    /dg:work {stump}
-    │                              │
-    ▼                              ▼
-[S] Search (optional)        Read TASK.md
-[I] Introspect (optional)         │
-[T] Template (optional)           ▼
-[R] Review (always)          work-planner → LOOPS.yaml
-    │                              │
-    ▼                         ┌────┴────┐
-.delegate/study/{stump}/      │  Loop   │
-└── TASK.md                   │  01/    │
-                              ├─────────┤
-                              │ PLAN.md │
-                              │ IMPL.md │
-                              │ TEST.md │
-                              └────┬────┘
-                                   │
-                              git commit
-```
-
-## Output Structure
-
-```
-.delegate/
-├── study/             # SITR cycle outputs
-├── work/              # Task execution
-├── templates/         # Cloned repos
-└── doc/               # Auto-generated docs
-```
+**Uninstall:** `npx delegate-claude uninstall`
 
 ## License
 
