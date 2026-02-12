@@ -38,7 +38,7 @@ A coding-agent plugin for spec-driven development. Splits work into two phases: 
 
 **Examples:** `/dg:study` (5 cycles default), `/dg:study 10`, `/dg:study opus 3 auth`
 
-## Study Cycle: SITR
+## Study Loop: SITR
 
 The study phase explores a theme before proposing solutions. Runs up to N cycles (default 5), each producing a TASK.md proposal. Intended for less expensive models running for long periods — users review the generated TASKs and decide which to implement.
 
