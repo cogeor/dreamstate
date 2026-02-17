@@ -75,6 +75,16 @@ No templates available in `.delegate/templates/`
 Consider using [S] phase to clone reference repos.
 ```
 
+## Status Return
+
+After writing T.md, return ONLY:
+
+```
+Wrote T.md to {stump}
+```
+
+Do NOT return findings or content to the orchestrator. The next agent reads from the file.
+
 ## Constraints
 
 - Read-only

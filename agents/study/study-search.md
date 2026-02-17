@@ -70,6 +70,16 @@ Created: {timestamp}
 {What should be done based on research}
 ```
 
+## Status Return
+
+After writing S.md, return ONLY:
+
+```
+Wrote S.md to {stump}
+```
+
+Do NOT return findings or content to the orchestrator. The next agent reads from the file.
+
 ## Constraints
 
 - 1 query per invocation

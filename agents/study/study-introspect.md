@@ -65,6 +65,16 @@ Created: {timestamp}
 {What improvement should be made}
 ```
 
+## Status Return
+
+After writing I.md, return ONLY:
+
+```
+Wrote I.md to {stump}
+```
+
+Do NOT return findings or content to the orchestrator. The next agent reads from the file.
+
 ## Constraints
 
 - Read-only
